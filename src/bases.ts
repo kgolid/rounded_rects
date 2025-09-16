@@ -5,8 +5,8 @@ export function get_base_change_function(scale: number, rotation: number, transl
   return (pnt: Vec) => translateWithBase(add(pnt, translation), get_bases(scale, rotation));
 }
 
-export function get_shadow_base_change_function(scale: number, rotation: number, translation: Vec = vec(0, 0, 0)) {
-  return (pnt: Vec) => translateWithBase(add(pnt, translation), get_shadow_bases(scale, rotation));
+export function get_flat_base_change_function(scale: number, rotation: number, translation: Vec = vec(0, 0, 0)) {
+  return (v: Vec) => vec(v.x + v.z, v.y + v.z);
 }
 
 export function get_bases(scale: number, rotation: number): Vec[] {

@@ -1,16 +1,17 @@
 import P5 from 'p5';
 import { rounded_rect_points } from './shapes';
-import { add, mul, sub, translateWithBase, vec } from './vector';
-import { display_backdrop, display_pnts, display_shadow } from './display';
-import { get_base_change_function, get_shadow_base_change_function } from './bases';
-import { get_sides, get_sides2, get_silhouette } from './blocks';
+import { add, scale, vec } from './vector';
+import { display_backdrop, display_cell, display_pnts, display_shadow } from './display';
+import { get_base_change_function } from './bases';
+import { get_sides, get_silhouette } from './blocks';
 import { color_set } from './colors';
-import { get_grid_positions } from './grid';
+import { get_grid } from './grid';
+import { my_shuffle } from './util';
 
 let sketch = function (p: P5) {
   p.setup = function () {
     p.createCanvas(900, 1200);
-    p.background(200, 210, 180);
+    p.background(220, 230, 210);
     p.smooth();
     p.strokeJoin(p.ROUND);
     p.translate(p.width / 2, p.height / 2);
@@ -19,50 +20,55 @@ let sketch = function (p: P5) {
 
     p.stroke(0, 50);
     p.strokeWeight(2);
-    let grid = get_grid_positions(vec(p.width + 1400, p.height + 1400), vec(10, 10), bc);
-    grid.forEach((g) => {
-      p.line(g[0].x, g[0].y, g[1].x, g[1].y);
-    });
+    // let grid = get_grid_positions(vec(p.width + 1400, p.height + 1400), vec(15, 10), bc);
+    // grid.forEach((g) => {
+    //   p.line(g[0].x, g[0].y, g[1].x, g[1].y);
+    // });
 
-    let padding = 180;
+    let cells = get_grid(vec(p.width + 1400, p.height + 1400), vec(15, 10));
+    cells.forEach((t) => display_cell(p, t, bc));
 
-    for (let i = 0; i < 18; i++) {
-      for (let j = 0; j < 18; j++) {
-        if (Math.random() < 0.5) continue;
-        let dim = vec(50 + Math.random() * 40, 50 + Math.random() * 40);
-        let height = 20 + Math.random() * 30;
-        let shadow_dir = vec(height / 2, -height, 0);
-        let corner_radius = 5 + Math.random() * 20;
-        let rotation = Math.random() * 2 - 1;
-        let rect_pos = vec(800 - j * padding, 800 - i * padding);
-        let rect_dim = vec(dim.x, dim.y, -height);
+    let token_points = cells.flatMap((c) => c.token_points.map((tp) => add(tp, c.pos)));
+    my_shuffle(token_points);
+    console.log(token_points.length);
 
-        let center = add(rect_pos, mul(rect_dim, 0.5));
+    token_points = token_points.slice(0, 200);
 
-        let pnts = rounded_rect_points(rect_pos, rect_dim, corner_radius, 2, rotation);
+    token_points.sort((a, b) => b.x + b.y - (a.x + a.y));
 
-        let s_pnts = rounded_rect_points(
-          sub(rect_pos, mul(shadow_dir, 0.96)),
-          vec(dim.x, dim.y, 3),
-          corner_radius,
-          2,
-          rotation
-        );
-        let sides = get_sides(pnts, vec(0, 0, -height), 1, center);
-        let color_id = Math.floor(Math.random() * color_set.length);
+    for (let i = 0; i < token_points.length; i++) {
+      let pos = token_points[i];
+      let dim = vec(30 + Math.random() * 30, 30 + Math.random() * 30);
 
-        //s_sides.forEach((s) => display_shadow(p, s, 50, bc));
-        //display_shadow(p, s_pnts, 50, bc);
+      let height = 20 + Math.random() * 20;
+      let rotation = (Math.random() - 0.5) * Math.PI * 2;
+      let corner_radius = (Math.random() * Math.min(dim.x, dim.y)) / 2;
+      let tapering = 0.95;
 
-        let s_silhouette = get_silhouette(s_pnts, shadow_dir, 1, center);
-        display_shadow(p, s_silhouette, 50, bc);
+      //let color_indexes = [...new Array(color_set.length)].map((i => i)).filter();
 
-        let backdrop = get_silhouette(pnts, vec(0, 0, -height), 1, center);
-        display_backdrop(p, backdrop, color_id, bc);
+      let color_id = Math.floor(Math.random() * color_set.length);
 
-        sides.forEach((s) => display_pnts(p, s, color_id, 1, bc));
-        display_pnts(p, pnts, color_id, 5, bc);
-      }
+      let shadow_dir = vec(0, height);
+
+      let pnts = rounded_rect_points(pos, dim, corner_radius, 1, rotation);
+
+      let top_pnts = pnts.map((t) => scale({ ...t, z: height }, pos, tapering));
+      let s_pnts = pnts.map((t) => scale({ ...t, z: -2 }, pos, 1.05));
+
+      let sides = get_sides(pnts, vec(0, 0, height), tapering, pos);
+      let backdrop_silhouette = get_silhouette(pnts, vec(0, 0, height), tapering, pos);
+      let shadow_silhouette = get_silhouette(s_pnts, shadow_dir, tapering, pos);
+
+      display_shadow(p, shadow_silhouette, 50, bc);
+
+      //display_backdrop(p, backdrop_silhouette, color_id, bc);
+
+      sides.forEach((s) => display_backdrop(p, s, color_id, bc));
+      display_backdrop(p, top_pnts, color_id, bc);
+
+      sides.forEach((s) => display_pnts(p, s, color_id, 10, bc));
+      display_pnts(p, top_pnts, color_id, 5, bc);
     }
   };
 

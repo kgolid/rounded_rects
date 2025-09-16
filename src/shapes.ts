@@ -8,15 +8,15 @@ export function rounded_rect_points(
   point_distance: number,
   rotation: number = 0
 ): Vec[] {
-  let outer_south = pos.y + dim.y;
-  let outer_north = pos.y;
-  let outer_east = pos.x + dim.x;
-  let outer_west = pos.x;
+  let outer_south = pos.y + dim.y / 2;
+  let outer_north = pos.y - dim.y / 2;
+  let outer_east = pos.x + dim.x / 2;
+  let outer_west = pos.x - dim.x / 2;
 
-  let inner_south = pos.y + dim.y - corner_radius;
-  let inner_north = pos.y + corner_radius;
-  let inner_east = pos.x + dim.x - corner_radius;
-  let inner_west = pos.x + corner_radius;
+  let inner_south = pos.y + dim.y / 2 - corner_radius;
+  let inner_north = pos.y - dim.y / 2 + corner_radius;
+  let inner_east = pos.x + dim.x / 2 - corner_radius;
+  let inner_west = pos.x - dim.x / 2 + corner_radius;
 
   let se_corner = vec(inner_east, inner_south);
   let sw_corner = vec(inner_west, inner_south);
@@ -48,8 +48,7 @@ export function rounded_rect_points(
     ...ne_points,
   ];
 
-  let center = add(pos, mul(dim, 0.5));
-  points = points.map((t) => rotate_around(t, center, rotation));
+  points = points.map((t) => rotate_around(t, pos, rotation));
 
   return points.map((v) => ({ ...v, z: -dim.z }));
 }

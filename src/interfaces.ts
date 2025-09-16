@@ -6,3 +6,14 @@ export interface Shape {
   c: Vec;
   d: Vec;
 }
+
+export type Cell = {
+  pos: Vec;
+  dim: Vec; // TODO: generalize to bounding box?
+  token_points: Vec[];
+  restrictions: RestrictionMap;
+};
+
+export type RestrictionMap = {
+  color: (_: number) => boolean;
+};

@@ -1,6 +1,6 @@
 import p5 from 'p5';
-import { Shape, Vec } from './interfaces';
-import { vec } from './vector';
+import { Cell, Shape, Vec } from './interfaces';
+import { add, sub, vec } from './vector';
 import { illuminanceOfShape } from './light';
 import { color_set } from './colors';
 import { lch_scale } from './lch_scale';
@@ -62,6 +62,30 @@ export function display_backdrop(p: p5, pnts: Vec[], color_id: number, bc: (_: V
 export function display_shadow(p: p5, pnts: Vec[], opacity: number, bc: (_: Vec) => Vec) {
   p.fill(0, opacity);
   p.noStroke();
+  p.beginShape();
+  for (let i = 0; i < pnts.length; i++) {
+    let pnt = bc(pnts[i]);
+    p.vertex(pnt.x, pnt.y);
+  }
+  p.endShape(p.CLOSE);
+}
+
+export function display_cell(p: p5, cell: Cell, bc: (_: Vec) => Vec) {
+  let dim = sub(cell.dim, vec(5, 5));
+  let pnts = [
+    cell.pos,
+    vec(cell.pos.x, cell.pos.y + dim.y),
+    vec(cell.pos.x + dim.x, cell.pos.y + dim.y),
+    vec(cell.pos.x + dim.x, cell.pos.y),
+  ];
+
+  // let illuminance = get_illum(pnts);
+  // let palette = lch_scale(color_set[1].c, 5);
+
+  // let color = palette[Math.floor(illuminance * palette.length)];
+  p.noFill();
+  p.stroke(0, 20);
+
   p.beginShape();
   for (let i = 0; i < pnts.length; i++) {
     let pnt = bc(pnts[i]);
