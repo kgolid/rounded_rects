@@ -1,16 +1,17 @@
 import P5 from 'p5';
 import { rounded_rect_points } from './shapes';
-import { add, scale, vec } from './vector';
-import { display_backdrop, display_cell, display_pnts, display_shadow } from './display';
+import { add, mul, nullVector, scale, vec } from './vector';
+import { display_backdrop, display_cell, display_face_edge, display_pnts, display_shadow } from './display';
 import { get_base_change_function } from './bases';
 import { get_sides, get_silhouette } from './blocks';
-import { color_set } from './colors';
-import { get_grid } from './grid';
-import { my_shuffle } from './util';
+import { board_cell, get_grid, get_token_points } from './grid';
+import { get_piece_color_ids, get_piece_profiles, get_pieces, get_pieces2 } from './pieces';
+import { create_supergrid } from './partition';
+import { fill_cells_with_restrictions } from './restrictions';
 
 let sketch = function (p: P5) {
   p.setup = function () {
-    p.createCanvas(900, 1200);
+    p.createCanvas(1500, 2100);
     p.background(220, 230, 210);
     p.smooth();
     p.strokeJoin(p.ROUND);
@@ -18,57 +19,71 @@ let sketch = function (p: P5) {
 
     let bc = get_base_change_function(1, 0);
 
-    p.stroke(0, 50);
-    p.strokeWeight(2);
-    // let grid = get_grid_positions(vec(p.width + 1400, p.height + 1400), vec(15, 10), bc);
-    // grid.forEach((g) => {
-    //   p.line(g[0].x, g[0].y, g[1].x, g[1].y);
-    // });
+    p.strokeWeight(1);
 
-    let cells = get_grid(vec(p.width + 1400, p.height + 1400), vec(15, 10));
-    cells.forEach((t) => display_cell(p, t, bc));
+    const number_of_profiles = 5;
+    const number_of_colors = 5;
+    const number_of_pieces = 250;
 
-    let token_points = cells.flatMap((c) => c.token_points.map((tp) => add(tp, c.pos)));
-    my_shuffle(token_points);
-    console.log(token_points.length);
+    const ref_dim = Math.max(p.width, p.height);
 
-    token_points = token_points.slice(0, 200);
+    let profiles = get_piece_profiles(number_of_profiles);
+    let color_ids = get_piece_color_ids(number_of_colors);
 
-    token_points.sort((a, b) => b.x + b.y - (a.x + a.y));
+    let partition_cells = create_supergrid();
+    let board_cells = partition_cells.map((pc) =>
+      board_cell(pc.id, nullVector(), mul(pc.pos, ref_dim + 700), mul(pc.dim, ref_dim + 700), Math.random() < 0.5)
+    );
 
-    for (let i = 0; i < token_points.length; i++) {
-      let pos = token_points[i];
-      let dim = vec(30 + Math.random() * 30, 30 + Math.random() * 30);
+    fill_cells_with_restrictions(board_cells, profiles, color_ids);
 
-      let height = 20 + Math.random() * 20;
-      let rotation = (Math.random() - 0.5) * Math.PI * 2;
-      let corner_radius = (Math.random() * Math.min(dim.x, dim.y)) / 2;
-      let tapering = 0.95;
+    board_cells.forEach(
+      (bc) =>
+        (bc.token_points = get_token_points(
+          bc.dim,
+          profiles.filter((p) => bc.restrictions.profile_id(p.id)),
+          bc.orderly
+        ))
+    );
 
-      //let color_indexes = [...new Array(color_set.length)].map((i => i)).filter();
+    board_cells.forEach((t) => display_cell(p, t, bc));
+    console.log(partition_cells);
 
-      let color_id = Math.floor(Math.random() * color_set.length);
+    //let cells = get_grid(grid_dim, number_of_cells, profiles, color_ids);
+    //cells.forEach((t) => display_cell(p, t, bc));
 
-      let shadow_dir = vec(0, height);
+    //let pieces = get_pieces2(number_of_pieces, profiles, color_ids, board_cells);
+    let pieces = get_pieces(profiles, color_ids, board_cells);
+    console.log(board_cells);
+    console.log(pieces.length);
 
-      let pnts = rounded_rect_points(pos, dim, corner_radius, 1, rotation);
+    for (let i = 0; i < pieces.length; i++) {
+      let piece = pieces[i];
+      if (piece.spec == undefined) continue;
 
-      let top_pnts = pnts.map((t) => scale({ ...t, z: height }, pos, tapering));
-      let s_pnts = pnts.map((t) => scale({ ...t, z: -2 }, pos, 1.05));
+      let pos = piece.pos;
+      let profile = piece.spec.profile;
+      let height = piece.spec.profile.dim.z;
+      let color_id = piece.spec.color_id;
 
-      let sides = get_sides(pnts, vec(0, 0, height), tapering, pos);
-      let backdrop_silhouette = get_silhouette(pnts, vec(0, 0, height), tapering, pos);
-      let shadow_silhouette = get_silhouette(s_pnts, shadow_dir, tapering, pos);
+      let shadow_dir = vec(-height / 3, height / 2);
+
+      let pnts = rounded_rect_points(pos, profile.dim, profile.corner_radius, 1, piece.rotation);
+
+      let top_pnts = pnts.map((t) => scale({ ...t, z: height }, pos, profile.tapering));
+      let s_pnts = pnts.map((t) => scale({ ...t, z: -3 }, pos, 1.05));
+
+      let sides = get_sides(pnts, vec(0, 0, height), profile.tapering, pos);
+      let shadow_silhouette = get_silhouette(s_pnts, shadow_dir, profile.tapering, pos);
 
       display_shadow(p, shadow_silhouette, 50, bc);
-
-      //display_backdrop(p, backdrop_silhouette, color_id, bc);
 
       sides.forEach((s) => display_backdrop(p, s, color_id, bc));
       display_backdrop(p, top_pnts, color_id, bc);
 
       sides.forEach((s) => display_pnts(p, s, color_id, 10, bc));
-      display_pnts(p, top_pnts, color_id, 5, bc);
+      display_pnts(p, top_pnts, color_id, 10, bc);
+      display_face_edge(p, top_pnts, color_id, bc);
     }
   };
 

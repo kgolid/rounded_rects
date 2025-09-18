@@ -33,3 +33,13 @@ export function createHash(rng: () => number = Math.random): string {
   console.log(h);
   return h;
 }
+
+export function random_partition<T>(arr: T[], parts: number): T[][] {
+  let partition_map = [...new Array(arr.length)].map((_, i) => (i < parts ? i : random_int(parts)));
+  let shuffled_map = my_shuffle(partition_map);
+
+  let partition: T[][] = [...new Array(parts)].map((_): T[] => []);
+  shuffled_map.forEach((x, i) => partition[x].push(arr[i]));
+
+  return partition;
+}

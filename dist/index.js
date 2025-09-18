@@ -75,6 +75,9 @@
         if (z === void 0) { z = 0; }
         return { x: x, y: y, z: z };
     }
+    function shape(a, b, c, d) {
+        return { a: a, b: b, c: c, d: d };
+    }
     function nullVector() {
         return vec(0, 0);
     }
@@ -98,6 +101,9 @@
     }
     function mag(a) {
         return Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+    }
+    function normalize(a) {
+        return mul(a, 1 / mag(a));
     }
     function angleBetween(a, b) {
         return Math.acos(dotProduct(a, b) / (mag(a) * mag(b)));
@@ -133,6 +139,11 @@
             z: p1.z
         };
     }
+    function normal_of_shape(q) {
+        var xvec = sub(q.b, q.a);
+        var yvec = sub(q.d, q.a);
+        return crossProduct(xvec, yvec);
+    }
 
     function rounded_rect_points(pos, dim, corner_radius, point_distance, rotation) {
         if (rotation === void 0) { rotation = 0; }
@@ -160,8 +171,7 @@
         var n_points = points_on_line(vec(inner_west, outer_north), vec(inner_east, outer_north), h_straight_points);
         var e_points = points_on_line(vec(outer_east, inner_north), vec(outer_east, inner_south), v_straight_points);
         var points = __spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray([], e_points, true), se_points, true), s_points, true), sw_points, true), w_points, true), nw_points, true), n_points, true), ne_points, true);
-        points = points.map(function (t) { return rotate_around(t, pos, rotation); });
-        return points.map(function (v) { return (__assign(__assign({}, v), { z: -dim.z })); });
+        return points.map(function (t) { return rotate_around(t, pos, rotation); });
     }
     function points_on_line(from, to, number_of_points) {
         return __spreadArray([], new Array(number_of_points), true).map(function (_, i) { return lerp$1(from, to, i / number_of_points); });
@@ -203,18 +213,454 @@
         var illuminance = Math.max(0, -Math.cos(angle));
         return Math.pow(illuminance, Math.pow(2, 0));
     }
+    function illuminanceOfEdge(sun, edge_start, edge_end, q1, q2) {
+        var n1 = normalize(normal_of_shape(q1));
+        var n2 = normalize(normal_of_shape(q2));
+        var edge_normal = mul(add(n1, n2), 0.5);
+        var edge_center = mul(add(edge_start, edge_end), 0.5);
+        var edgeToSunVec = sub(edge_center, sun);
+        var angle = angleBetween(edge_normal, edgeToSunVec);
+        var illuminance = Math.max(0, -Math.cos(angle));
+        return Math.max(0, Math.min(0.9999, Math.pow(illuminance, Math.pow(2, 0))));
+    }
 
-    var color_set = [
-        { c: ['#c98a70', '#e7ded5', '#ffffd9'], s: '#c98a70' },
-        { c: ['#ca456b', '#f19797', '#ffc7b3'], s: '#ca456b' },
-        { c: ['#df5905', '#f9b73e', '#ffed62'], s: '#df5905' },
-        { c: ['#c50040', '#ee5151', '#ff946c'], s: '#c50040' },
-        { c: ['#d50028', '#fb671f', '#ffaa44'], s: '#d50028' },
-        { c: ['#008c4c', '#6bbe3a', '#aff55d'], s: '#008c4c' },
-        { c: ['#0049a4', '#0c75b7', '#00c3fd'], s: '#0049a4' },
-        { c: ['#007150', '#0b9e4e', '#72dc6e'], s: '#007150' },
-        { c: ['#5c0058', '#763f68', '#df7395'], s: '#5c0058' },
+    var palettes = [
+        {
+            label_front: 7,
+            label_back: 2,
+            color_sets: [
+                { c: ['#582136', '#613455', '#5f5b99', '#7999b8'], s: '#582136' },
+                { c: ['#fa2e13', '#fa2e13', '#fb4d3e', '#faa99e'], s: '#fa2e13' },
+                { c: ['#9b95b3', '#b9b7df', '#d9d7e5', '#f5f1ee'], s: '#9b95b3' },
+                { c: ['#feba4b', '#f8deed', '#fefdf9'], s: '#f19a83' },
+                { c: ['#2c6d26', '#388627', '#00c15f', '#a0d049'], s: '#2c6d26' },
+                { c: ['#67492e', '#577dc5', '#b7becf'], s: '#745a43' },
+                { c: ['#f13e11', '#f79527', '#f7cf4b'], s: '#f13e11' },
+                { c: ['#342022', '#342022', '#6674b2'], s: '#342022' },
+            ]
+        },
+        {
+            label_front: 5,
+            label_back: 1,
+            color_sets: [
+                { c: ['#ca0023', '#ec6a22', '#ffac46'], s: '#ca0023' },
+                { c: ['#d4935e', '#f7e9c5', '#ffffe4'], s: '#d4935e' },
+                { c: ['#006f46', '#399a3f', '#84d861'], s: '#006f46' },
+                { c: ['#987a00', '#9ac764', '#d3fc81'], s: '#987a00' },
+                { c: ['#e37125', '#ffcd6b', '#ffff87'], s: '#e37125' },
+                { c: ['#551142', '#634754', '#c87d89'], s: '#551142' },
+                { c: ['#008e71', '#98c195', '#c7f9af'], s: '#008e71' },
+                { c: ['#006139', '#708658', '#abc67a'], s: '#006139' },
+            ]
+        },
+        {
+            label_front: 5,
+            label_back: 1,
+            color_sets: [
+                { c: ['#973400', '#a87c2a', '#e9ba4f'], s: '#973400' },
+                { c: ['#379572', '#bdc9b1', '#eaffc6'], s: '#379572' },
+                { c: ['#cb0028', '#f14616', '#ff9238'], s: '#cb0028' },
+                { c: ['#cd6c6a', '#ecbfaf', '#fff1c0'], s: '#cd6c6a' },
+                { c: ['#00532e', '#017724', '#66ba4a'], s: '#00532e' },
+                { c: ['#02113a', '#0e2733', '#007787'], s: '#02113a' },
+                { c: ['#0064cc', '#2b9ae9', '#00e1ff'], s: '#0064cc' },
+            ]
+        },
+        {
+            label_front: 6,
+            label_back: 7,
+            color_sets: [
+                { c: ['#75432d', '#817c77', '#d1b792'], s: '#75432d' },
+                { c: ['#004b5f', '#396c68', '#58b59b'], s: '#004b5f' },
+                { c: ['#00a79d', '#89e3b7', '#acffd4'], s: '#00a79d' },
+                { c: ['#d63924', '#f59647', '#ffd067'], s: '#d63924' },
+                { c: ['#b20035', '#d63644', '#ff815d'], s: '#b20035' },
+                { c: ['#750033', '#893f49', '#e37b6e'], s: '#750033' },
+                { c: ['#420033', '#4d3240', '#b46a78'], s: '#420033' },
+                { c: ['#ce7c48', '#edd09e', '#ffffb2'], s: '#ce7c48' },
+            ]
+        },
+        {
+            label_front: 7,
+            label_back: 0,
+            color_sets: [
+                { c: ['#874644', '#de99bd', '#fbeddc'], s: '#874644' },
+                { c: ['#63c1d9', '#b6ecdf', '#ffefb9'], s: '#63c1d9' },
+                { c: ['#4aafd9', '#73c7dc', '#b6ebde'], s: '#4aafd9' },
+                { c: ['#a8335e', '#e651a4', '#fea9c5'], s: '#a8335e' },
+                { c: ['#b82d3c', '#f24363', '#fec287'], s: '#b82d3c' },
+                { c: ['#673fa0', '#bb8ed6', '#ff9991'], s: '#673fa0' },
+                { c: ['#780600', '#d81300', '#f65414'], s: '#780600' },
+                { c: ['#3b4052', '#189cb2', '#65c5d4'], s: '#3b4052' },
+            ]
+        },
+        {
+            label_front: 8,
+            label_back: 0,
+            color_sets: [
+                { c: ['#c98a70', '#e7ded5', '#ffffd9'], s: '#c98a70' },
+                { c: ['#ca456b', '#f19797', '#ffc7b3'], s: '#ca456b' },
+                { c: ['#df5905', '#f9b73e', '#ffed62'], s: '#df5905' },
+                { c: ['#c50040', '#ee5151', '#ff946c'], s: '#c50040' },
+                { c: ['#d50028', '#fb671f', '#ffaa44'], s: '#d50028' },
+                { c: ['#008c4c', '#6bbe3a', '#aff55d'], s: '#008c4c' },
+                { c: ['#0049a4', '#0c75b7', '#00c3fd'], s: '#0049a4' },
+                { c: ['#007150', '#0b9e4e', '#72dc6e'], s: '#007150' },
+                { c: ['#5c0058', '#763f68', '#df7395'], s: '#5c0058' },
+            ]
+        },
+        {
+            label_front: 2,
+            label_back: 3,
+            color_sets: [
+                { c: ['#d6002e', '#ff3931', '#ff894d'], s: '#d6002e' },
+                { c: ['#005455', '#007861', '#4fbe89'], s: '#005455' },
+                { c: ['#360013', '#311f27', '#985962'], s: '#360013' },
+                { c: ['#9c7440', '#bab9a4', '#f2f0b8'], s: '#9c7440' },
+            ]
+        },
+        {
+            label_front: 2,
+            label_back: 5,
+            color_sets: [
+                { c: ['#a7001d', '#ea663f', '#ffa75d'], s: '#a7001d' },
+                { c: ['#c34c00', '#f9cc27', '#ffff55'], s: '#c34c00' },
+                { c: ['#0056a1', '#84afd7', '#76f1ff'], s: '#0056a1' },
+                { c: ['#005b57', '#7ca994', '#a3e7b6'], s: '#005b57' },
+                { c: ['#a94977', '#f1bbc9', '#ffe1f7'], s: '#a94977' },
+                { c: ['#986957', '#e8dccc', '#ffffe9'], s: '#986957' },
+            ]
+        },
+        {
+            label_front: 4,
+            label_back: 6,
+            color_sets: [
+                { c: ['#00967d', '#99cb9f', '#c7ffb8'], s: '#00967d' },
+                { c: ['#bf6100', '#cfb610', '#ffec47'], s: '#bf6100' },
+                { c: ['#af0021', '#d00701', '#ff761d'], s: '#af0021' },
+                { c: ['#bf584f', '#dba78d', '#ffdba4'], s: '#bf584f' },
+                { c: ['#340012', '#2e2c1d', '#787444'], s: '#340012' },
+                { c: ['#a1773e', '#bfbea2', '#f6f4b6'], s: '#a1773e' },
+                { c: ['#b28348', '#d2cfaf', '#ffffc1'], s: '#b28348' },
+            ]
+        },
+        {
+            label_front: 4,
+            label_back: 1,
+            color_sets: [
+                { c: ['#db5605', '#f4b232', '#ffe959'], s: '#db5605' },
+                { c: ['#c1764f', '#f2dbbd', '#ffffcd'], s: '#d1865f' },
+                { c: ['#005092', '#01799c', '#00c3d9'], s: '#005092' },
+                { c: ['#c1003a', '#e93e48', '#ff8762'], s: '#c1003a' },
+                { c: ['#001152', '#0b1952', '#8a66b2'], s: '#001152' },
+                { c: ['#00473d', '#006748', '#50ae71'], s: '#00473d' },
+                { c: ['#c62a59', '#ed817d', '#ffb799'], s: '#c62a59' },
+            ]
+        },
+        {
+            label_front: 2,
+            label_back: 1,
+            color_sets: [
+                { c: ['#00247c', '#1b5ac9', '#a0e1ff'], s: '#00247c' },
+                { c: ['#874644', '#eeb9cd', '#fff0ec'], s: '#874644' },
+                { c: ['#360013', '#311f27', '#985962'], s: '#360013' },
+                { c: ['#860027', '#eb7b11', '#ffd565'], s: '#860027' },
+                { c: ['#00144c', '#00247c', '#4b8af9'], s: '#00144c' },
+            ]
+        },
+        {
+            label_front: 2,
+            label_back: 1,
+            color_sets: [
+                { c: ['#003d89', '#2c6393', '#50d1e1'], s: '#003d89' },
+                { c: ['#d07982', '#eecfca', '#ffffd8'], s: '#d07982' },
+                { c: ['#3d0023', '#412432', '#a85d6a'], s: '#3d0023' },
+                { c: ['#a82d3c', '#f25363', '#fee277'], s: '#b82d3c' },
+            ]
+        },
+        {
+            label_front: 2,
+            label_back: 5,
+            color_sets: [
+                { c: ['#a7001d', '#ea663f', '#ffa75d'], s: '#a7001d' },
+                { c: ['#c34c00', '#f9cc27', '#ffff55'], s: '#c34c00' },
+                { c: ['#0056a1', '#84afd7', '#76f1ff'], s: '#0056a1' },
+                { c: ['#005b57', '#7ca994', '#a3e7b6'], s: '#005b57' },
+                { c: ['#a94977', '#f1bbc9', '#ffe1f7'], s: '#a94977' },
+                { c: ['#986957', '#e8dccc', '#ffffe9'], s: '#986957' },
+            ]
+        },
+        {
+            label_front: 0,
+            label_back: 0,
+            color_sets: [
+                { c: ['#b10039', '#d44c4c', '#ff8f67'], s: '#b10039' },
+                { c: ['#bd2060', '#e47781', '#ffac9d'], s: '#bd2060' },
+                { c: ['#db7825', '#f5d274', '#ffff8f'], s: '#db7825' },
+                { c: ['#d49158', '#f7e8be', '#ffffce'], s: '#d49158' },
+                { c: ['#00876b', '#6fb97a', '#a8f397'], s: '#00876b' },
+                { c: ['#00754c', '#5ba150', '#9bde71'], s: '#00754c' },
+                { c: ['#005347', '#037750', '#59bc76'], s: '#005347' },
+                { c: ['#00215e', '#003e5e', '#008eb1'], s: '#00215e' },
+                { c: ['#312b6b', '#595373', '#c386b7'], s: '#312b6b' },
+                { c: ['#45378c', '#73659e', '#e891d3'], s: '#45378c' },
+                { c: ['#8b4781', '#ac879f', '#ffb4ca'], s: '#8b4781' },
+            ]
+        },
+        {
+            label_front: 0,
+            label_back: 2,
+            color_sets: [
+                { c: ['#001240', '#22283b', '#866390'], s: '#001240' },
+                { c: ['#00967d', '#79cb9f', '#c7ffb8'], s: '#00967d' },
+                { c: ['#b28348', '#d2cfaf', '#ffffc1'], s: '#b28348' },
+                { c: ['#d35d00', '#eab700', '#ffed43'], s: '#d35d00' },
+            ]
+        },
+        {
+            label_front: 7,
+            label_back: 0,
+            color_sets: [
+                { c: ['#874644', '#de99bd', '#fbeddc'], s: '#874644' },
+                { c: ['#63c1d9', '#b6ecdf', '#ffefb9'], s: '#63c1d9' },
+                { c: ['#4aafd9', '#73c7dc', '#b6ebde'], s: '#4aafd9' },
+                { c: ['#a8335e', '#e651a4', '#fea9c5'], s: '#a8335e' },
+                { c: ['#b82d3c', '#f24363', '#fec287'], s: '#b82d3c' },
+                { c: ['#673fa0', '#bb8ed6', '#ff9991'], s: '#673fa0' },
+                { c: ['#780600', '#d81300', '#f65414'], s: '#780600' },
+                { c: ['#3b4052', '#189cb2', '#65c5d4'], s: '#3b4052' },
+            ]
+        },
+        {
+            label_front: 4,
+            label_back: 5,
+            color_sets: [
+                { c: ['#d26a9e', '#ffbdd0', '#ffe3fd'], s: '#d26a9e' },
+                { c: ['#d6002b', '#ff4328', '#ff9046'], s: '#d6002b' },
+                { c: ['#ca241b', '#e88526', '#ffc24c'], s: '#ca241b' },
+                { c: ['#008750', '#21b929', '#88f24d'], s: '#008750' },
+                { c: ['#0061b5', '#2193c9', '#00dbff'], s: '#0061b5' },
+                { c: ['#d4a574', '#ffecda', '#ffffe9'], s: '#d4a574' },
+                { c: ['#e86b00', '#ffcc21', '#ffff52'], s: '#e86b00' },
+            ]
+        },
+        {
+            label_front: 1,
+            label_back: 3,
+            color_sets: [
+                { c: ['#00a79d', '#89e3b7', '#acffd4'], s: '#00a79d' },
+                { c: ['#360013', '#311f27', '#985962'], s: '#360013' },
+                { c: ['#ca456b', '#f19797', '#ffc7b3'], s: '#ca456b' },
+                { c: ['#d4935e', '#f7e9c5', '#ffffd4'], s: '#d4935e' },
+                { c: ['#d35d00', '#eab700', '#ffed43'], s: '#d35d00' },
+            ]
+        },
+        {
+            label_front: 3,
+            label_back: 0,
+            color_sets: [
+                { c: ['#64989f', '#74a8af', '#e7e9d5'], s: '#64989f' },
+                { c: ['#e86c32', '#e5a958', '#e7e9d5'], s: '#e86c32' },
+                { c: ['#5d3c52', '#e86c32', '#e5a958'], s: '#5d3c52' },
+                { c: ['#3b2638', '#5d3c52', '#e86c32'], s: '#3b2638' },
+            ]
+        },
+        {
+            label_front: 1,
+            label_back: 3,
+            color_sets: [
+                { c: ['#512c61', '#7b4c6e', '#e08fbd'], s: '#512c61' },
+                { c: ['#30003d', '#4a2839', '#c1616f'], s: '#40002d' },
+                { c: ['#b60036', '#d9574a', '#ffb856'], s: '#b60036' },
+                { c: ['#bf584f', '#dba78d', '#ffebb4'], s: '#bf584f' },
+            ]
+        },
+        {
+            label_front: 1,
+            label_back: 0,
+            color_sets: [
+                { c: ['#e86c32', '#e5a958', '#e7e9d5'], s: '#e86c32' },
+                { c: ['#3b2638', '#5d3c52', '#e86c32'], s: '#3b2638' },
+            ]
+        },
+        {
+            label_front: 8,
+            label_back: 0,
+            color_sets: [
+                { c: ['#c98a70', '#e7ded5', '#ffffd9'], s: '#c98a70' },
+                { c: ['#ca456b', '#f19797', '#ffc7b3'], s: '#ca456b' },
+                { c: ['#df5905', '#f9b73e', '#ffed62'], s: '#df5905' },
+                { c: ['#c50040', '#ee5151', '#ff946c'], s: '#c50040' },
+                { c: ['#d50028', '#fb671f', '#ffaa44'], s: '#d50028' },
+                { c: ['#008c4c', '#6bbe3a', '#aff55d'], s: '#008c4c' },
+                { c: ['#0049a4', '#0c75b7', '#00c3fd'], s: '#0049a4' },
+                { c: ['#007150', '#0b9e4e', '#72dc6e'], s: '#007150' },
+                { c: ['#5c0058', '#763f68', '#df7395'], s: '#5c0058' },
+            ]
+        },
+        {
+            label_front: 4,
+            label_back: 5,
+            color_sets: [
+                { c: ['#cc0028', '#f34312', '#ff9135'], s: '#cc0028' },
+                { c: ['#00748f', '#00a49e', '#49e5c1'], s: '#00748f' },
+                { c: ['#c63569', '#ef888f', '#ffbaac'], s: '#c63569' },
+                { c: ['#db5703', '#f5b408', '#ffeb45'], s: '#db5703' },
+                { c: ['#3d0023', '#412432', '#a85d6a'], s: '#3d0023' },
+                { c: ['#ce7c48', '#edd09e', '#ffffb2'], s: '#ce7c48' },
+            ]
+        },
+        {
+            label_front: 0,
+            label_back: 4,
+            color_sets: [
+                { c: ['#002819', '#1d3b1a', '#5c9545'], s: '#002819' },
+                { c: ['#c60027', '#eb4b11', '#ffb535'], s: '#c60027' },
+                { c: ['#d16200', '#e5bc00', '#fff144'], s: '#d16200' },
+                { c: ['#ce2444', '#f29881', '#ffcd9a'], s: '#ce4454' },
+                { c: ['#cd6c6a', '#eccfaf', '#fff1e0'], s: '#cd6c6a' },
+            ]
+        },
+        {
+            label_front: 4,
+            label_back: 1,
+            color_sets: [
+                { c: ['#db5605', '#f4b232', '#ffe959'], s: '#db5605' },
+                { c: ['#c1764f', '#f2dbbd', '#ffffcd'], s: '#d1865f' },
+                { c: ['#005092', '#01799c', '#00c3d9'], s: '#005092' },
+                { c: ['#c1003a', '#e93e48', '#ff8762'], s: '#c1003a' },
+                { c: ['#001152', '#0b1952', '#8a66b2'], s: '#001152' },
+                { c: ['#00473d', '#006748', '#50ae71'], s: '#00473d' },
+                { c: ['#c62a59', '#ed817d', '#ffb799'], s: '#c62a59' },
+            ]
+        },
+        {
+            label_front: 2,
+            label_back: 3,
+            color_sets: [
+                { c: ['#ca0037', '#f33342', '#ff835c'], s: '#ca0037' },
+                { c: ['#db5703', '#f5b408', '#ffeb45'], s: '#db5703' },
+                { c: ['#001240', '#22283b', '#866390'], s: '#001240' },
+                { c: ['#bc8d68', '#dfdcd5', '#ffffd9'], s: '#bc8d68' },
+            ]
+        },
+        {
+            label_front: 2,
+            label_back: 3,
+            color_sets: [
+                { c: ['#d35d00', '#eab700', '#ffed43'], s: '#d35d00' },
+                { c: ['#c20026', '#e64818', '#ff9339'], s: '#c20026' },
+                { c: ['#003d89', '#2c6393', '#00b1e1'], s: '#003d89' },
+                { c: ['#d07982', '#eecfca', '#ffffd8'], s: '#d07982' },
+            ]
+        },
+        {
+            label_front: 0,
+            label_back: 3,
+            color_sets: [
+                { c: ['#4c1209', '#5f322a', '#a78260'], s: '#4c1209' },
+                { c: ['#d94c1e', '#f6b74b', '#ffdf6b'], s: '#d94c1e' },
+                { c: ['#005874', '#3892a6', '#7be5af'], s: '#006874' },
+                { c: ['#da8f85', '#f8e9e2', '#ffffd9'], s: '#da8f85' },
+                { c: ['#950048', '#d55a3a', '#ffbc57'], s: '#b50028' },
+            ]
+        },
+        {
+            label_front: 1,
+            label_back: 0,
+            color_sets: [
+                { c: ['#d07982', '#eecfca', '#ffffe8'], s: '#d07982' },
+                { c: ['#00247c', '#1b5ac9', '#80d1ff'], s: '#00247c' },
+                { c: ['#360013', '#311f27', '#a86952'], s: '#360013' },
+            ]
+        },
+        {
+            label_front: 2,
+            label_back: 1,
+            color_sets: [
+                { c: ['#10147c', '#1b5ac9', '#80e1ff'], s: '#00247c' },
+                { c: ['#d07982', '#eecfca', '#ffffe8'], s: '#d07982' },
+                { c: ['#360013', '#311f27', '#a86952'], s: '#360013' },
+                { c: ['#860027', '#eb7b11', '#ffd565'], s: '#860027' },
+                { c: ['#00144c', '#00247c', '#4b8af9'], s: '#00144c' },
+            ]
+        },
+        {
+            label_front: 1,
+            label_back: 0,
+            color_sets: [
+                { c: ['#874644', '#de99bd', '#fbeddc'], s: '#874644' },
+                { c: ['#fbeddc', '#de99bd', '#874644'], s: '#fbeddc' },
+            ]
+        },
+        {
+            label_front: 4,
+            label_back: 3,
+            color_sets: [
+                { c: ['#763f68', '#ee5151', '#f1b777'], s: '#763f68' },
+                { c: ['#763f68', '#0c75b7', '#fb671f'], s: '#763f68' },
+                { c: ['#0b8e5e', '#6bbe3a', '#f9b73e'], s: '#0b8e5e' },
+                { c: ['#763f68', '#d7aeb5', '#f7eee5'], s: '#763f68' },
+                { c: ['#5c0058', '#5c0058', '#763f68'], s: '#5c0058' },
+            ]
+        },
+        {
+            label_front: 2,
+            label_back: 0,
+            color_sets: [
+                { c: ['#b58d5b', '#dbdac9', '#ffffd7'], s: '#b58d5b' },
+                { c: ['#b50028', '#d55a3a', '#ff9c57'], s: '#b50028' },
+                { c: ['#003781', '#2a5c8a', '#00abda'], s: '#003781' },
+            ]
+        },
+        {
+            label_front: 1,
+            label_back: 0,
+            color_sets: [
+                { c: ['#c88967', '#e8dccc', '#ffffd9'], s: '#c88967' },
+                { c: ['#c20035', '#e94641', '#ff8e5c'], s: '#c20035' },
+                { c: ['#ca5c79', '#eeaeae', '#ffdaca'], s: '#ca5c79' },
+            ]
+        },
+        {
+            label_front: 1,
+            label_back: 0,
+            color_sets: [
+                { c: ['#a59faf', '#e5dfcf', '#fff5df'], s: '#a59faf' },
+                { c: ['#001240', '#22283b', '#966380'], s: '#001240' },
+                { c: ['#00748f', '#00847e', '#75c4bf'], s: '#00748f' },
+                { c: ['#c96997', '#e19ba9', '#ffe1c7'], s: '#c96997' },
+            ]
+        },
+        {
+            label_front: 4,
+            label_back: 1,
+            color_sets: [
+                { c: ['#db5605', '#f4b232', '#ffe959'], s: '#db5605' },
+                { c: ['#c1764f', '#f2dbbd', '#ffffcd'], s: '#d1865f' },
+                { c: ['#005092', '#01799c', '#00c3d9'], s: '#005092' },
+                { c: ['#c1003a', '#e93e48', '#ff8762'], s: '#c1003a' },
+                { c: ['#001152', '#0b1952', '#8a66b2'], s: '#001152' },
+                { c: ['#00473d', '#006748', '#50ae71'], s: '#00473d' },
+                { c: ['#c62a59', '#ed817d', '#ffb799'], s: '#c62a59' },
+            ]
+        },
+        {
+            label_front: 4,
+            label_back: 1,
+            color_sets: [
+                { c: ['#db5605', '#f4b232', '#ffe959'], s: '#db5605' },
+                { c: ['#c1764f', '#f2dbbd', '#ffffcd'], s: '#d1865f' },
+                { c: ['#005092', '#01799c', '#00c3d9'], s: '#005092' },
+                { c: ['#c1003a', '#e93e48', '#ff8762'], s: '#c1003a' },
+                { c: ['#001152', '#0b1952', '#8a66b2'], s: '#001152' },
+                { c: ['#00473d', '#006748', '#50ae71'], s: '#00473d' },
+                { c: ['#c62a59', '#ed817d', '#ffb799'], s: '#c62a59' },
+            ]
+        },
     ];
+
+    var color_set = palettes[26].color_sets;
 
     var KAPPA = 24389 / 27;
     var EPSILON = 216 / 24389;
@@ -388,6 +834,23 @@
         }
         p.endShape(p.CLOSE);
     }
+    function display_face_edge(p, pnts, color_id, bc) {
+        var flat_quad = shape(vec(100, 0, 0), vec(0, 100, 0), vec(-100, 0, 0), vec(0, -100, 0));
+        for (var i = 0; i < pnts.length - 1; i++) {
+            var l1 = pnts[i];
+            var l2 = pnts[i + 1];
+            if (l1.x - l1.y > l2.x - l2.y)
+                continue;
+            var c1 = shape(l1, l2, add(l2, vec(0, 0, 10)), add(l1, vec(0, 0, 10)));
+            var colorset = color_set[color_id];
+            var scale = lch_scale(colorset.c, 10);
+            var illuminance = illuminanceOfEdge(sun, l1, l2, flat_quad, c1);
+            var col = scale[Math.floor(illuminance * scale.length)];
+            p.strokeWeight(2);
+            p.stroke(col);
+            draw_line(p, l1, l2, bc);
+        }
+    }
     function display_shadow(p, pnts, opacity, bc) {
         p.fill(0, opacity);
         p.noStroke();
@@ -398,8 +861,13 @@
         }
         p.endShape(p.CLOSE);
     }
+    function draw_line(p, l1, l2, bc) {
+        var p1 = bc(l1);
+        var p2 = bc(l2);
+        p.line(p1.x, p1.y, p2.x, p2.y);
+    }
     function display_cell(p, cell, bc) {
-        var dim = sub(cell.dim, vec(5, 5));
+        var dim = sub(cell.dim, vec(8, 8));
         var pnts = [
             cell.pos,
             vec(cell.pos.x, cell.pos.y + dim.y),
@@ -408,6 +876,7 @@
         ];
         p.noFill();
         p.stroke(0, 20);
+        p.strokeWeight(2);
         p.beginShape();
         for (var i = 0; i < pnts.length; i++) {
             var pnt = bc(pnts[i]);
@@ -432,6 +901,9 @@
         return [b1, b2, b3].map(function (b) { return mul(b, scale); });
     }
 
+    function pickAny(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
     var random_int = function (max) { return Math.floor(Math.random() * max); };
     var nmod = function (x, n) {
         return ((x % n) + n) % n;
@@ -443,6 +915,13 @@
             _a = [a[j], a[i]], a[i] = _a[0], a[j] = _a[1];
         }
         return a;
+    }
+    function random_partition(arr, parts) {
+        var partition_map = __spreadArray([], new Array(arr.length), true).map(function (_, i) { return (i < parts ? i : random_int(parts)); });
+        var shuffled_map = my_shuffle(partition_map);
+        var partition = __spreadArray([], new Array(parts), true).map(function (_) { return []; });
+        shuffled_map.forEach(function (x, i) { return partition[x].push(arr[i]); });
+        return partition;
     }
 
     function get_silhouette(plane_pnts, extraction, scale_number, scale_anchor) {
@@ -482,16 +961,33 @@
             var b = pnts[i + 1];
             var s_a = scaled_pnts[i];
             var s_b = scaled_pnts[i + 1];
-            if (segment_is_front(a, b)) {
-                var c = add(s_b, extraction);
-                var d = add(s_a, extraction);
-                sides.push([d, c, b, a]);
-            }
+            var c = add(s_b, extraction);
+            var d = add(s_a, extraction);
+            sides.push([d, c, b, a]);
         }
+        sides.sort(function (a, b) { return b[0].x + b[0].y - (a[0].x + a[0].y); });
         return sides;
     }
-    function segment_is_front(a, b) {
-        return a.x - a.y < b.x - b.y;
+
+    var always_true = function (_) { return true; };
+    var trivial_restriction = { type: 'trivial', color_id: always_true, profile_id: always_true };
+    function fill_cells_with_restrictions(cells, profiles, color_ids) {
+        var ids = new Set(cells.map(function (c) { return c.id; }));
+        var restriction_map = new Map();
+        ids.forEach(function (id) { return restriction_map.set(id, random_restriction(profiles, color_ids)); });
+        cells.forEach(function (c) { return (c.restrictions = restriction_map.get(c.id)); });
+        var orderly_map = new Map();
+        ids.forEach(function (id) { return orderly_map.set(id, Math.random() < 0.4); });
+        cells.forEach(function (c) { return (c.orderly = orderly_map.get(c.id)); });
+    }
+    function random_restriction(profiles, color_ids) {
+        var chosen_color_id = pickAny(color_ids);
+        var chosen_profile_id = pickAny(profiles).id;
+        var is_color_restriction = Math.random() < 0.5;
+        var type = is_color_restriction ? 'color' : 'profile';
+        var color_predicate = is_color_restriction ? function (t) { return t == chosen_color_id; } : always_true;
+        var profile_predicate = is_color_restriction ? always_true : function (t) { return t == chosen_profile_id; };
+        return { type: type, color_id: color_predicate, profile_id: profile_predicate };
     }
 
     function tinyNDArrayOfInteger (gridShape) {
@@ -1385,75 +1881,275 @@
 
     var poissonDiskSampling = PoissonDiskSampling;
 
-    function get_grid(grid_dim, cell_num) {
-        var pos = mul(grid_dim, -1 / 2);
-        var cell_dim = vec(grid_dim.x / cell_num.x, grid_dim.y / cell_num.y);
-        var cells = [];
-        for (var j = 0; j < cell_num.y; j++) {
-            for (var i = 0; i < cell_num.x; i++) {
-                var cell_pos = vec(pos.x + cell_dim.x * i, pos.y + cell_dim.y * j);
-                var cell = get_cell(cell_pos, cell_dim);
-                cells.push(cell);
-            }
-        }
-        return cells;
-    }
-    function get_cell(pos, dim) {
-        var token_points = get_token_points(dim);
-        var col_idx = random_int(color_set.length);
-        var col_idx2 = random_int(color_set.length);
-        var restrictions = { color: function (t) { return t == col_idx || t == col_idx2; } };
-        return { pos: pos, dim: dim, token_points: token_points, restrictions: restrictions };
-    }
-    function get_token_points(cell_dim) {
-        var pad = 50;
+    function get_token_points(cell_dim, possible_profiles, orderly) {
+        if (possible_profiles.length == 0)
+            return [];
+        if (possible_profiles.length == 1 && orderly)
+            return get_orderly_token_points(cell_dim, possible_profiles[0].dim);
+        var dim = Math.max.apply(Math, possible_profiles.map(function (p) { return mag(p.dim); }));
+        var pad = dim / 2 + 5;
+        if (cell_dim.x < 2 * pad || cell_dim.y < 2 * pad)
+            return [];
         var sampling = new poissonDiskSampling({
             shape: [cell_dim.x - pad * 2, cell_dim.y - pad * 2],
-            minDistance: 70,
-            tries: 50
+            minDistance: dim + 5,
+            maxDistance: dim * 1.5,
+            tries: 100
         });
-        return sampling.fill().map(function (d) { return vec(d[0] + pad, d[1] + pad, 0); });
+        var points = sampling.fill().map(function (d) { return vec(d[0] + pad, d[1] + pad, 0); });
+        points.sort(function (a, b) { return mag(sub(a, mul(cell_dim, 0.5))) - mag(sub(b, mul(cell_dim, 0.5))); });
+        return points;
+    }
+    function get_orderly_token_points(cell_dim, token_dim) {
+        var pad = 15;
+        var x = Math.floor((cell_dim.x - pad * 2) / (token_dim.x + pad));
+        var y = Math.floor((cell_dim.y - pad * 2) / (token_dim.y + pad));
+        var rest_x = cell_dim.x - pad * 2 - (token_dim.x + pad) * x;
+        var rest_y = cell_dim.y - pad * 2 - (token_dim.y + pad) * y;
+        var points = [];
+        for (var j = 0; j < y; j++) {
+            for (var i = 0; i < x; i++) {
+                var px = pad + rest_x / 2 + (i + 0.5) * (token_dim.x + pad);
+                var py = pad + rest_y / 2 + (j + 0.5) * (token_dim.y + pad);
+                points.push(vec(px, py));
+            }
+        }
+        points.reverse();
+        return points;
+    }
+    function board_cell(id, grid_pos, pos, dim, orderly, token_points, restrictions) {
+        if (token_points === void 0) { token_points = []; }
+        if (restrictions === void 0) { restrictions = trivial_restriction; }
+        return { id: id, grid_pos: grid_pos, pos: pos, dim: dim, orderly: orderly, token_points: token_points, restrictions: restrictions };
+    }
+
+    function get_pieces(profiles, color_ids, cells) {
+        var pieces = [];
+        cells.forEach(function (c) {
+            var prob = 0.3 + Math.random() * 0.7;
+            var number_of_pieces = Math.round(c.token_points.length * prob);
+            var token_points = c.token_points.slice(0, number_of_pieces + 1);
+            var piece_specs = get_piece_specs(profiles, color_ids);
+            token_points.forEach(function (tp) {
+                var suitable_piece_specs = piece_specs.filter(function (s) { return spec_meets_restrictions(s, c.restrictions); });
+                var spec = pickAny(suitable_piece_specs);
+                var rotation_variance = c.restrictions.type == 'profile' && c.orderly ? 0.04 : 0.4;
+                var rotation = (Math.random() - 0.5) * Math.PI * rotation_variance;
+                pieces.push({ spec: spec, rotation: rotation, pos: add(tp, c.pos) });
+            });
+        });
+        pieces.sort(function (a, b) { return b.pos.x + b.pos.y - (a.pos.x + a.pos.y); });
+        return pieces;
+    }
+    function spec_meets_restrictions(spec, restr) {
+        return restr.color_id(spec.color_id) && restr.profile_id(spec.profile.id);
+    }
+    function get_piece_specs(profiles, color_ids) {
+        var number_of_groups = 2;
+        var grouped_profiles = random_partition(profiles, number_of_groups);
+        var grouped_colors = random_partition(color_ids, number_of_groups);
+        var specs = [];
+        var _loop_1 = function (i) {
+            var profiles_1 = grouped_profiles[i];
+            var colors = grouped_colors[i];
+            profiles_1.forEach(function (pr) { return colors.forEach(function (ci) { return specs.push({ color_id: ci, profile: pr }); }); });
+        };
+        for (var i = 0; i < number_of_groups; i++) {
+            _loop_1(i);
+        }
+        return specs;
+    }
+    function get_piece_profiles(n) {
+        var profiles = [];
+        for (var i = 0; i < n; i++) {
+            profiles.push(get_random_piece_profile(i));
+        }
+        return profiles;
+    }
+    function get_random_piece_profile(id) {
+        var width = pickAny([40, 50, 60, 120]);
+        var length = pickAny([40, 50, 60, 120]);
+        var height = 10 + Math.random() * 40;
+        var dim = vec(length, width, height);
+        var corner_radius = pickAny([0.05, 0.1, 0.2, 0.499]) * Math.min(length, width);
+        var tapering = height < 30 ? 1 : pickAny([0.5, 0.8, 1, 1]);
+        return { id: id, dim: dim, corner_radius: corner_radius, tapering: tapering };
+    }
+    function get_piece_color_ids(n) {
+        var colors = my_shuffle(__spreadArray([], new Array(color_set.length), true).map(function (_, i) { return i; }));
+        return colors.slice(0, n);
+    }
+
+    var cell_count = 0;
+    var generate_cell_id = function () {
+        cell_count++;
+        return cell_count;
+    };
+
+    var min_dim = 0.1;
+    var slice_chance = 0.25;
+    var PAD_RATIO = 0.005;
+    var terminal_chance = function (d) { return (d - 8) / 20; };
+    function create_supergrid() {
+        var grid = [cell(vec(-0.5, -0.5), vec(1, 1, 0), 0)];
+        var splitted = divide_cells_repeatedly(grid, 0);
+        return splitted;
+    }
+    function divide_cells_repeatedly(cells, iteration) {
+        var chance = Math.sqrt((100 - iteration) / 50);
+        if (Math.random() >= chance) {
+            console.log('hit above ' + Math.round(chance * 100) / 100 + ' after ' + iteration + ' iterations.');
+            return cells;
+        }
+        var cells_big_enough = cells.filter(function (c) { return (c.dim.x > min_dim * 1.1 || c.dim.y > min_dim * 1.1) && !c.terminal; });
+        if (cells_big_enough.length == 0) {
+            console.log('none big enough');
+            return cells;
+        }
+        var ids = new Set(cells_big_enough.map(function (c) { return c.id; }));
+        var pick_id = my_shuffle(Array.from(ids))[0];
+        var picked_cells = cells
+            .filter(function (c) { return c.id == pick_id; })
+            .map(function (c) { return pad_cell(c, c.depth < 9 ? PAD_RATIO / (1 + c.depth) : 0); });
+        var unpicked_cells = cells.filter(function (c) { return c.id != pick_id; });
+        var divided_cells = divide_cell(picked_cells[0], iteration);
+        var new_cells = picked_cells.flatMap(function (pc) {
+            return divided_cells.map(function (dc) { return cell(add(pc.pos, dc.pos), dc.dim, dc.depth, dc.terminal, dc.id); });
+        });
+        return divide_cells_repeatedly(__spreadArray(__spreadArray([], unpicked_cells, true), new_cells, true), iteration + 1);
+    }
+    function divide_cell(c, iteration) {
+        var pad = 0;
+        if (iteration < 1)
+            return split_cell(c, pad);
+        var pick_slice = Math.random() < slice_chance;
+        if (pick_slice)
+            return slice_cell(c);
+        return split_cell(c, pad);
+    }
+    function slice_cell(c, pad) {
+        var max_x_cells = Math.min(5, Math.floor(c.dim.x / min_dim));
+        var max_y_cells = Math.min(5, Math.floor(c.dim.y / min_dim));
+        var x_cells = 1 + random_int(max_x_cells);
+        var y_cells = 1 + random_int(max_y_cells);
+        var depth_increase = Math.round(Math.log2(x_cells * y_cells));
+        var cell_width = c.dim.x / x_cells;
+        var cell_height = c.dim.y / y_cells;
+        var depth = c.depth + depth_increase;
+        var terminal = Math.random() < terminal_chance(depth);
+        var id = generate_cell_id();
+        var cells = [];
+        for (var j = 0; j < y_cells; j++) {
+            for (var i = 0; i < x_cells; i++) {
+                var pos = vec(i * cell_width, j * cell_height, 0);
+                var dim = vec(cell_width, cell_height, c.dim.z);
+                var new_cell = cell(pos, dim, depth, terminal, id);
+                cells.push(new_cell);
+            }
+        }
+        console.log(c.id + ' -' + x_cells + ',' + y_cells + '-> ' + id);
+        return cells;
+    }
+    function split_cell(c, pad) {
+        if (c.dim.x < min_dim)
+            return split_cell_horisontally(c, pad);
+        if (c.dim.y < min_dim)
+            return split_cell_vertically(c, pad);
+        var hw_ratio = c.dim.x / (c.dim.x + c.dim.y);
+        var pick_horisontal = 0.5 > hw_ratio;
+        if (pick_horisontal)
+            return split_cell_horisontally(c, pad);
+        else
+            return split_cell_vertically(c, pad);
+    }
+    function split_cell_horisontally(c, pad) {
+        var r1 = (Math.random() + Math.random() + Math.random()) / 3;
+        var r = 0.1 + r1 * 0.8;
+        var split_y = c.dim.y * r;
+        var min_dim = Math.min(c.dim.x, c.dim.y) / 2;
+        var h1 = min_dim * (1 + Math.pow(Math.random(), 4));
+        var h2 = min_dim * (1 + Math.pow(Math.random(), 4));
+        var depth = c.depth + 1;
+        var terminal = Math.random() < terminal_chance(depth);
+        var c1 = cell(nullVector(), vec(c.dim.x, split_y - pad, h1), depth, terminal);
+        var c2 = cell(vec(0, split_y + pad, 0), vec(c.dim.x, c.dim.y - split_y - pad, h2), depth, terminal);
+        console.log(c.id + ' -h-> ' + c1.id + ', ' + c2.id);
+        return [c1, c2];
+    }
+    function split_cell_vertically(c, pad) {
+        var r1 = (Math.random() + Math.random() + Math.random()) / 3;
+        var r = 0.1 + r1 * 0.8;
+        var split_x = c.dim.x * r;
+        var min_dim = Math.min(c.dim.x, c.dim.y) / 2;
+        var h1 = min_dim * (1 + Math.pow(Math.random(), 4));
+        var h2 = min_dim * (1 + Math.pow(Math.random(), 4));
+        var depth = c.depth + 1;
+        var terminal = Math.random() < terminal_chance(depth);
+        var c1 = cell(nullVector(), vec(split_x - pad, c.dim.y, h1), depth, terminal);
+        var c2 = cell(vec(split_x + pad, 0, 0), vec(c.dim.x - split_x - pad, c.dim.y, h2), depth, terminal);
+        console.log(c.id + ' -v-> ' + c1.id + ', ' + c2.id);
+        return [c1, c2];
+    }
+    function pad_cell(c, pad) {
+        return cell(add(c.pos, vec(pad, pad)), sub(c.dim, vec(pad * 2, pad * 2)), c.depth, c.terminal, c.id);
+    }
+    function cell(pos, dim, depth, terminal, id) {
+        if (terminal === void 0) { terminal = false; }
+        if (id === void 0) { id = -1; }
+        if (id == -1)
+            id = generate_cell_id();
+        return { pos: pos, dim: dim, id: id, depth: depth, terminal: terminal };
     }
 
     var sketch = function (p) {
         p.setup = function () {
-            p.createCanvas(900, 1200);
+            p.createCanvas(1500, 2100);
             p.background(220, 230, 210);
             p.smooth();
             p.strokeJoin(p.ROUND);
             p.translate(p.width / 2, p.height / 2);
             var bc = get_base_change_function(1, 0);
-            p.stroke(0, 50);
-            p.strokeWeight(2);
-            var cells = get_grid(vec(p.width + 1400, p.height + 1400), vec(15, 10));
-            cells.forEach(function (t) { return display_cell(p, t, bc); });
-            var token_points = cells.flatMap(function (c) { return c.token_points.map(function (tp) { return add(tp, c.pos); }); });
-            my_shuffle(token_points);
-            console.log(token_points.length);
-            token_points = token_points.slice(0, 200);
-            token_points.sort(function (a, b) { return b.x + b.y - (a.x + a.y); });
+            p.strokeWeight(1);
+            var number_of_profiles = 5;
+            var number_of_colors = 5;
+            var ref_dim = Math.max(p.width, p.height);
+            var profiles = get_piece_profiles(number_of_profiles);
+            var color_ids = get_piece_color_ids(number_of_colors);
+            var partition_cells = create_supergrid();
+            var board_cells = partition_cells.map(function (pc) {
+                return board_cell(pc.id, nullVector(), mul(pc.pos, ref_dim + 700), mul(pc.dim, ref_dim + 700), Math.random() < 0.5);
+            });
+            fill_cells_with_restrictions(board_cells, profiles, color_ids);
+            board_cells.forEach(function (bc) {
+                return (bc.token_points = get_token_points(bc.dim, profiles.filter(function (p) { return bc.restrictions.profile_id(p.id); }), bc.orderly));
+            });
+            board_cells.forEach(function (t) { return display_cell(p, t, bc); });
+            console.log(partition_cells);
+            var pieces = get_pieces(profiles, color_ids, board_cells);
+            console.log(board_cells);
+            console.log(pieces.length);
             var _loop_1 = function (i) {
-                var pos = token_points[i];
-                var dim = vec(30 + Math.random() * 30, 30 + Math.random() * 30);
-                var height = 20 + Math.random() * 20;
-                var rotation = (Math.random() - 0.5) * Math.PI * 2;
-                var corner_radius = (Math.random() * Math.min(dim.x, dim.y)) / 2;
-                var tapering = 0.95;
-                var color_id = Math.floor(Math.random() * color_set.length);
-                var shadow_dir = vec(0, height);
-                var pnts = rounded_rect_points(pos, dim, corner_radius, 1, rotation);
-                var top_pnts = pnts.map(function (t) { return scale(__assign(__assign({}, t), { z: height }), pos, tapering); });
-                var s_pnts = pnts.map(function (t) { return scale(__assign(__assign({}, t), { z: -2 }), pos, 1.05); });
-                var sides = get_sides(pnts, vec(0, 0, height), tapering, pos);
-                get_silhouette(pnts, vec(0, 0, height), tapering, pos);
-                var shadow_silhouette = get_silhouette(s_pnts, shadow_dir, tapering, pos);
+                var piece = pieces[i];
+                if (piece.spec == undefined)
+                    return "continue";
+                var pos = piece.pos;
+                var profile = piece.spec.profile;
+                var height = piece.spec.profile.dim.z;
+                var color_id = piece.spec.color_id;
+                var shadow_dir = vec(-height / 3, height / 2);
+                var pnts = rounded_rect_points(pos, profile.dim, profile.corner_radius, 1, piece.rotation);
+                var top_pnts = pnts.map(function (t) { return scale(__assign(__assign({}, t), { z: height }), pos, profile.tapering); });
+                var s_pnts = pnts.map(function (t) { return scale(__assign(__assign({}, t), { z: -3 }), pos, 1.05); });
+                var sides = get_sides(pnts, vec(0, 0, height), profile.tapering, pos);
+                var shadow_silhouette = get_silhouette(s_pnts, shadow_dir, profile.tapering, pos);
                 display_shadow(p, shadow_silhouette, 50, bc);
                 sides.forEach(function (s) { return display_backdrop(p, s, color_id, bc); });
                 display_backdrop(p, top_pnts, color_id, bc);
                 sides.forEach(function (s) { return display_pnts(p, s, color_id, 10, bc); });
-                display_pnts(p, top_pnts, color_id, 5, bc);
+                display_pnts(p, top_pnts, color_id, 10, bc);
+                display_face_edge(p, top_pnts, color_id, bc);
             };
-            for (var i = 0; i < token_points.length; i++) {
+            for (var i = 0; i < pieces.length; i++) {
                 _loop_1(i);
             }
         };

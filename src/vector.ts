@@ -1,7 +1,11 @@
-import { Vec } from './interfaces';
+import { Shape, Vec } from './interfaces';
 
 export function vec(x: number, y: number, z: number = 0): Vec {
   return { x, y, z };
+}
+
+export function shape(a: Vec, b: Vec, c: Vec, d: Vec): Shape {
+  return { a, b, c, d };
 }
 
 export function nullVector() {
@@ -85,4 +89,10 @@ export function scale(p1: Vec, p2: Vec, mag: number): Vec {
     y: p2.y + (p1.y - p2.y) * mag,
     z: p1.z,
   };
+}
+
+export function normal_of_shape(q: Shape): Vec {
+  const xvec = sub(q.b, q.a);
+  const yvec = sub(q.d, q.a);
+  return crossProduct(xvec, yvec);
 }

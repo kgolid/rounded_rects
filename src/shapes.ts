@@ -48,9 +48,7 @@ export function rounded_rect_points(
     ...ne_points,
   ];
 
-  points = points.map((t) => rotate_around(t, pos, rotation));
-
-  return points.map((v) => ({ ...v, z: -dim.z }));
+  return points.map((t) => rotate_around(t, pos, rotation));
 }
 
 export function points_on_line(from: Vec, to: Vec, number_of_points: number) {

@@ -52,12 +52,13 @@ export function get_sides(
     let s_a = scaled_pnts[i];
     let s_b = scaled_pnts[i + 1];
 
-    if (segment_is_front(a, b)) {
-      let c = add(s_b, extraction);
-      let d = add(s_a, extraction);
-      sides.push([d, c, b, a]);
-    }
+    let c = add(s_b, extraction);
+    let d = add(s_a, extraction);
+    sides.push([d, c, b, a]);
   }
+
+  sides.sort((a, b) => b[0].x + b[0].y - (a[0].x + a[0].y));
+
   return sides;
 }
 
