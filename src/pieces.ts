@@ -18,7 +18,7 @@ export function get_pieces(profiles: PieceProfile[], color_ids: number[], cells:
       let spec = pickAny(suitable_piece_specs);
 
       let rotation_variance = c.restrictions.type == 'profile' && c.orderly ? 0.04 : 0.4;
-      let rotation = (Math.random() - 0.5) * Math.PI * rotation_variance;
+      let rotation = c.rotation + (Math.random() - 0.5) * Math.PI * rotation_variance;
       pieces.push({ spec, rotation, pos: add(tp, c.pos) });
     });
   });

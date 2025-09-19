@@ -22,6 +22,7 @@ export type BoardCell = {
   dim: Vec; // TODO: generalize to bounding box?
   token_points: Vec[];
   restrictions: RestrictionMap;
+  rotation: number;
   orderly: boolean;
 };
 

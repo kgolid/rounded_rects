@@ -42,7 +42,8 @@ let sketch = function (p: P5) {
         (bc.token_points = get_token_points(
           bc.dim,
           profiles.filter((p) => bc.restrictions.profile_id(p.id)),
-          bc.orderly
+          bc.orderly,
+          bc.rotation
         ))
     );
 
