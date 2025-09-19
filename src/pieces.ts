@@ -21,6 +21,16 @@ export function get_pieces(profiles: PieceProfile[], color_ids: number[], cells:
       let rotation = c.rotation + (Math.random() - 0.5) * Math.PI * rotation_variance;
       pieces.push({ spec, rotation, pos: add(tp, c.pos) });
     });
+
+    if (token_points.length == 0 && c.dim.x < 300 && c.dim.y < 300 && c.id % 4 == 3) {
+      let dim = vec(c.dim.x - 25, c.dim.y - 25, 10);
+      let col = suitable_piece_specs[0].color_id;
+      pieces.push({
+        spec: { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } },
+        rotation: 0,
+        pos: add(c.pos, mul(c.dim, 0.5)),
+      });
+    }
   });
 
   pieces.sort((a, b) => b.pos.x + b.pos.y - (a.pos.x + a.pos.y));
