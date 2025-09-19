@@ -35,5 +35,6 @@ export const color_set5 = [
   { c: ['#3b373d', '#f4a1ab', '#edf0e2'], s: '#f4a1ab' },
   { c: ['#3b373d', '#28664c', '#35a857', '#aad063'], s: '#3b373d' },
 ];
-
-export const color_set = palettes[26].color_sets;
+// 11
+// 18
+export const color_set = palettes[11].color_sets;

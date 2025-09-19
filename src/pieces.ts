@@ -6,7 +6,7 @@ import { add, mul, vec } from './vector';
 export function get_pieces(piece_specs: PieceSpec[], cells: BoardCell[]) {
   let pieces: Piece[] = [];
   cells.forEach((c) => {
-    let prob = 0.3 + Math.random() * 0.7;
+    let prob = Math.random();
     let number_of_pieces = Math.round(c.token_points.length * prob);
 
     let token_points = c.token_points.slice(0, number_of_pieces + 1);
@@ -99,11 +99,11 @@ export function get_piece_profiles(n: number): PieceProfile[] {
 function get_random_piece_profile(id: number): PieceProfile {
   let width = pickAny([40, 50, 60, 120]);
   let length = pickAny([40, 50, 60, 120]);
-  let height = 10 + Math.random() * 40;
+  let height = 10 + Math.random() * 60;
 
   let dim = vec(length, width, height);
   let corner_radius = pickAny([0.05, 0.1, 0.2, 0.499]) * Math.min(length, width);
-  let tapering = height < 30 ? 1 : pickAny([0.5, 0.8, 1, 1]);
+  let tapering = height < 30 ? 1 : pickAny([0.75, 0.9, 1, 1]);
 
   return { id, dim, corner_radius, tapering };
 }

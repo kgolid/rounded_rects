@@ -12,7 +12,8 @@ import { fill_cells_with_restrictions } from './restrictions';
 let sketch = function (p: P5) {
   p.setup = function () {
     p.createCanvas(1500, 2100);
-    p.background(220, 230, 210);
+    p.pixelDensity(4);
+    p.background('#c9cdc1');
     p.smooth();
     p.strokeJoin(p.ROUND);
     p.translate(p.width / 2, p.height / 2);
@@ -23,7 +24,6 @@ let sketch = function (p: P5) {
 
     const number_of_profiles = 5;
     const number_of_colors = 5;
-    const number_of_pieces = 250;
 
     const ref_dim = Math.max(p.width, p.height);
 
@@ -33,7 +33,7 @@ let sketch = function (p: P5) {
 
     let partition_cells = create_supergrid();
     let board_cells = partition_cells.map((pc) =>
-      board_cell(pc.id, nullVector(), mul(pc.pos, ref_dim + 700), mul(pc.dim, ref_dim + 700), Math.random() < 0.5)
+      board_cell(pc.id, nullVector(), mul(pc.pos, ref_dim + 900), mul(pc.dim, ref_dim + 900), false)
     );
 
     fill_cells_with_restrictions(board_cells, specs, profiles);

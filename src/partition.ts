@@ -3,10 +3,10 @@ import { PartitionCell, Vec } from './interfaces';
 import { my_shuffle, random_int } from './util';
 import { add, nullVector, sub, vec } from './vector';
 
-const min_dim = 0.1;
-const slice_chance = 0.25;
-const PAD_RATIO = 0.005; //0.008;
-const terminal_chance: (d: number) => number = (d) => (d - 8) / 20;
+const min_dim = 0.09;
+const slice_chance = 0.35;
+const PAD_RATIO = 0.003; //0.008;
+const terminal_chance: (d: number) => number = (d) => (d - 4) / 20;
 
 export function create_supergrid() {
   let grid: PartitionCell[] = [cell(vec(-0.5, -0.5), vec(1, 1, 0), 0)];
@@ -16,7 +16,7 @@ export function create_supergrid() {
 }
 
 function divide_cells_repeatedly(cells: PartitionCell[], iteration: number) {
-  let chance = Math.sqrt((100 - iteration) / 50);
+  let chance = Math.sqrt((200 - iteration) / 50);
 
   if (Math.random() >= chance) {
     console.log('hit above ' + Math.round(chance * 100) / 100 + ' after ' + iteration + ' iterations.');
@@ -26,7 +26,7 @@ function divide_cells_repeatedly(cells: PartitionCell[], iteration: number) {
   let cells_big_enough = cells.filter((c) => (c.dim.x > min_dim * 1.1 || c.dim.y > min_dim * 1.1) && !c.terminal);
 
   if (cells_big_enough.length == 0) {
-    console.log('none big enough');
+    console.log('none big enough, after ' + iteration + ' iterations.');
     return cells;
   }
 
@@ -40,6 +40,7 @@ function divide_cells_repeatedly(cells: PartitionCell[], iteration: number) {
   let unpicked_cells = cells.filter((c) => c.id != pick_id);
 
   let divided_cells = divide_cell(picked_cells[0], iteration);
+
   let new_cells = picked_cells.flatMap((pc) =>
     divided_cells.map((dc) => cell(add(pc.pos, dc.pos), dc.dim, dc.depth, dc.terminal, dc.id))
   );
@@ -59,7 +60,7 @@ function divide_cells_repeatedly(cells: PartitionCell[], iteration: number) {
 
 function divide_cell(c: PartitionCell, iteration: number): PartitionCell[] {
   let pad = 0; //(0.1 / (c.depth + 1)) ** 1.5;
-  if (iteration < 1) return split_cell(c, pad);
+  //if (iteration < 1) return split_cell(c, pad);
 
   let pick_slice = Math.random() < slice_chance;
   if (pick_slice) return slice_cell(c, pad);
@@ -103,7 +104,7 @@ function split_cell(c: PartitionCell, pad: number): PartitionCell[] {
   if (c.dim.y < min_dim) return split_cell_vertically(c, pad);
 
   let hw_ratio = c.dim.x / (c.dim.x + c.dim.y); // Big number means wide cell, small number means tall cell.
-  let pick_horisontal = 0.5 > hw_ratio;
+  let pick_horisontal = 0.5 > Math.random(); //hw_ratio;
 
   if (pick_horisontal) return split_cell_horisontally(c, pad);
   else return split_cell_vertically(c, pad);
