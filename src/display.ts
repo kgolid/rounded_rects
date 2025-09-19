@@ -99,12 +99,8 @@ function draw_line(p: p5, l1: Vec, l2: Vec, bc: (pnt: Vec) => Vec) {
 
 export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
   let dim = sub(cell.dim, vec(8, 8));
-  let pnts = [
-    cell.pos,
-    vec(cell.pos.x, cell.pos.y + dim.y),
-    vec(cell.pos.x + dim.x, cell.pos.y + dim.y),
-    vec(cell.pos.x + dim.x, cell.pos.y),
-  ];
+  let pos = add(cell.pos, vec(4, 4));
+  let pnts = [pos, vec(pos.x, pos.y + dim.y), vec(pos.x + dim.x, pos.y + dim.y), vec(pos.x + dim.x, pos.y)];
 
   // let illuminance = get_illum(pnts);
   // let palette = lch_scale(color_set[1].c, 5);
@@ -112,7 +108,7 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
   // let color = palette[Math.floor(illuminance * palette.length)];
   //p.fill(230, 240, 220);
   p.noFill();
-  p.stroke(0, 20);
+  p.stroke('#9aa297');
   p.strokeWeight(2);
 
   p.beginShape();
