@@ -1,11 +1,9 @@
 import P5 from 'p5';
-import { rounded_rect_points } from './shapes';
-import { add, mul, nullVector, scale, vec } from './vector';
-import { display_backdrop, display_cell, display_face_edge, display_pnts, display_shadow } from './display';
+import { mul, nullVector } from './vector';
+import { display_cell, display_piece, display_piece_shadow } from './display';
 import { get_base_change_function } from './bases';
-import { get_sides, get_silhouette } from './blocks';
-import { board_cell, get_grid, get_token_points } from './grid';
-import { get_piece_color_ids, get_piece_profiles, get_pieces, get_pieces2 } from './pieces';
+import { board_cell, get_token_points } from './grid';
+import { get_piece_color_ids, get_piece_profiles, get_piece_specs, get_pieces } from './pieces';
 import { create_supergrid } from './partition';
 import { fill_cells_with_restrictions } from './restrictions';
 
