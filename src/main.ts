@@ -29,13 +29,14 @@ let sketch = function (p: P5) {
 
     let profiles = get_piece_profiles(number_of_profiles);
     let color_ids = get_piece_color_ids(number_of_colors);
+    let specs = get_piece_specs(profiles, color_ids);
 
     let partition_cells = create_supergrid();
     let board_cells = partition_cells.map((pc) =>
       board_cell(pc.id, nullVector(), mul(pc.pos, ref_dim + 700), mul(pc.dim, ref_dim + 700), Math.random() < 0.5)
     );
 
-    fill_cells_with_restrictions(board_cells, profiles, color_ids);
+    fill_cells_with_restrictions(board_cells, specs, profiles);
 
     board_cells.forEach(
       (bc) =>

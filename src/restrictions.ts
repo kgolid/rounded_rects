@@ -1,15 +1,19 @@
-import { BoardCell, PieceProfile, RestrictionMap } from './interfaces';
+import { BoardCell, PieceProfile, PieceSpec, RestrictionMap } from './interfaces';
 import { pickAny } from './util';
 
 const always_true = (_: number) => true;
 
-export const trivial_restriction: RestrictionMap = { type: 'trivial', color_id: always_true, profile_id: always_true };
+export const trivial_restriction: RestrictionMap = {
+  type: 'trivial',
+  profile_id: always_true,
+  color_id: always_true,
+};
 
-export function fill_cells_with_restrictions(cells: BoardCell[], profiles: PieceProfile[], color_ids: number[]) {
+export function fill_cells_with_restrictions(cells: BoardCell[], specs: PieceSpec[], profiles: PieceProfile[]) {
   let ids = new Set(cells.map((c) => c.id));
 
   let restriction_map = new Map<number, RestrictionMap>();
-  ids.forEach((id) => restriction_map.set(id, random_restriction(profiles, color_ids)));
+  ids.forEach((id) => restriction_map.set(id, random_restriction(specs)));
   cells.forEach((c) => (c.restrictions = restriction_map.get(c.id)));
 
   let orderly_map = new Map<number, boolean>();
@@ -27,15 +31,16 @@ export function fill_cells_with_restrictions(cells: BoardCell[], profiles: Piece
   );
 }
 
-export function random_restriction(profiles: PieceProfile[], color_ids: number[]): RestrictionMap {
-  let chosen_color_id = pickAny(color_ids);
-  let chosen_profile_id = pickAny(profiles).id;
+export function random_restriction(specs: PieceSpec[]): RestrictionMap {
+  let chosen_spec = pickAny(specs);
+  let chosen_color_id = chosen_spec.color_id;
+  let chosen_profile_id = chosen_spec.profile.id;
 
-  let is_color_restriction = Math.random() < 0.5;
-  let type = is_color_restriction ? 'color' : 'profile';
+  let is_spec_restriction = Math.random() < 0.5;
+  let type = is_spec_restriction ? 'spec' : 'profile';
 
-  let color_predicate = is_color_restriction ? (t: number) => t == chosen_color_id : always_true;
-  let profile_predicate = is_color_restriction ? always_true : (t: number) => t == chosen_profile_id;
+  let profile_predicate = (t: number) => t == chosen_profile_id;
+  let color_predicate = is_spec_restriction ? (t: number) => t == chosen_color_id : always_true;
 
   return { type, color_id: color_predicate, profile_id: profile_predicate };
 }
