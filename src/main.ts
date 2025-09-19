@@ -47,44 +47,10 @@ let sketch = function (p: P5) {
     );
 
     board_cells.forEach((t) => display_cell(p, t, bc));
-    console.log(partition_cells);
 
-    //let cells = get_grid(grid_dim, number_of_cells, profiles, color_ids);
-    //cells.forEach((t) => display_cell(p, t, bc));
-
-    //let pieces = get_pieces2(number_of_pieces, profiles, color_ids, board_cells);
-    let pieces = get_pieces(profiles, color_ids, board_cells);
-    console.log(board_cells);
-    console.log(pieces.length);
-
-    for (let i = 0; i < pieces.length; i++) {
-      let piece = pieces[i];
-      if (piece.spec == undefined) continue;
-
-      let pos = piece.pos;
-      let profile = piece.spec.profile;
-      let height = piece.spec.profile.dim.z;
-      let color_id = piece.spec.color_id;
-
-      let shadow_dir = vec(-height / 3, height / 2);
-
-      let pnts = rounded_rect_points(pos, profile.dim, profile.corner_radius, 1, piece.rotation);
-
-      let top_pnts = pnts.map((t) => scale({ ...t, z: height }, pos, profile.tapering));
-      let s_pnts = pnts.map((t) => scale({ ...t, z: -3 }, pos, 1.05));
-
-      let sides = get_sides(pnts, vec(0, 0, height), profile.tapering, pos);
-      let shadow_silhouette = get_silhouette(s_pnts, shadow_dir, profile.tapering, pos);
-
-      display_shadow(p, shadow_silhouette, 50, bc);
-
-      sides.forEach((s) => display_backdrop(p, s, color_id, bc));
-      display_backdrop(p, top_pnts, color_id, bc);
-
-      sides.forEach((s) => display_pnts(p, s, color_id, 10, bc));
-      display_pnts(p, top_pnts, color_id, 10, bc);
-      display_face_edge(p, top_pnts, color_id, bc);
-    }
+    let pieces = get_pieces(specs, board_cells);
+    pieces.forEach((t) => display_piece_shadow(p, t, bc));
+    pieces.forEach((t) => display_piece(p, t, bc));
   };
 
   p.draw = function () {};

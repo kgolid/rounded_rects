@@ -1,11 +1,51 @@
 import p5 from 'p5';
-import { BoardCell, Shape, Vec } from './interfaces';
-import { add, shape, sub, vec } from './vector';
+import { BoardCell, Piece, Shape, Vec } from './interfaces';
+import { add, scale, shape, sub, vec } from './vector';
 import { illuminanceOfEdge, illuminanceOfShape } from './light';
 import { color_set } from './colors';
 import { lch_scale } from './lch_scale';
+import { rounded_rect_points } from './shapes';
+import { get_sides, get_silhouette } from './blocks';
+import { random_int } from './util';
+import { hatchParallelogram } from './hatch';
 
 let sun = vec(-1400, -2200, 2500);
+
+export function display_piece_shadow(p: p5, piece: Piece, bc: (_: Vec) => Vec) {
+  if (piece.spec == undefined) return;
+
+  let pos = piece.pos;
+  let profile = piece.spec.profile;
+  let height = piece.spec.profile.dim.z;
+
+  let shadow_dir = vec(-height / 3, height / 2);
+
+  let pnts = rounded_rect_points(pos, profile.dim, profile.corner_radius, 1, piece.rotation);
+  let s_pnts = pnts.map((t) => ({ ...t, z: -3 }));
+  let shadow_silhouette = get_silhouette(s_pnts, shadow_dir, profile.tapering, pos);
+
+  display_shadow(p, shadow_silhouette, 100, bc);
+}
+
+export function display_piece(p: p5, piece: Piece, bc: (_: Vec) => Vec) {
+  if (piece.spec == undefined) return;
+
+  let pos = piece.pos;
+  let profile = piece.spec.profile;
+  let height = piece.spec.profile.dim.z;
+  let color_id = piece.spec.color_id;
+
+  let pnts = rounded_rect_points(pos, profile.dim, profile.corner_radius, 1, piece.rotation);
+  let top_pnts = pnts.map((t) => scale({ ...t, z: height }, pos, profile.tapering));
+  let sides = get_sides(pnts, vec(0, 0, height), profile.tapering, pos);
+
+  sides.forEach((s) => display_backdrop(p, s, color_id, bc));
+  display_backdrop(p, top_pnts, color_id, bc);
+
+  sides.forEach((s) => display_pnts(p, s, color_id, 10, bc));
+  display_pnts(p, top_pnts, color_id, 10, bc);
+  display_face_edge(p, top_pnts, color_id, bc);
+}
 
 export function display_pnts(
   p: p5,
