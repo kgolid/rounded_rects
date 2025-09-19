@@ -121,4 +121,25 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
     p.vertex(pnt.x, pnt.y);
   }
   p.endShape(p.CLOSE);
+
+  if (cell.token_points.length == 0) {
+    let s = shape(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
+    p.strokeWeight(2);
+    hatchParallelogram(p, s, 6, Math.PI / 5);
+
+    //p.line(bc(pnts[0]).x, bc(pnts[0]).y, bc(pnts[2]).x, bc(pnts[2]).y);
+    //p.line(bc(pnts[1]).x, bc(pnts[1]).y, bc(pnts[3]).x, bc(pnts[3]).y);
+  } else {
+    let tpos = bc(add(pnts[0], vec(10, 10)));
+    p.push();
+    p.fill('#9aa297');
+    p.noStroke();
+    p.translate(tpos.x, tpos.y);
+    p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
+    p.rotate(-Math.PI / 4);
+    p.textSize(18);
+    p.textStyle(p.BOLD);
+    p.text('C-' + cell.id + '-' + random_int(100), 0, 0);
+    p.pop();
+  }
 }
