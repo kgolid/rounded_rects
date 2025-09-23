@@ -46,7 +46,7 @@ export function random_restriction(specs: PieceSpec[]): RestrictionMap {
 }
 
 export function decide_cell_wide_rotation(cell: BoardCell, profile: PieceProfile): number {
-  if (cell.dim.x - 10 < profile.dim.x || cell.dim.y - 10 < profile.dim.y) return Math.PI / 2;
-  if (cell.dim.y - 10 < profile.dim.x || cell.dim.x - 10 < profile.dim.y) return 0;
+  if (cell.dim.x - 30 < profile.dim.x + 15 || cell.dim.y - 30 < profile.dim.y + 15) return Math.PI / 2;
+  if (cell.dim.y - 30 < profile.dim.x + 15 || cell.dim.x - 30 < profile.dim.y + 15) return 0;
   return pickAny([0, Math.PI / 2]);
 }
