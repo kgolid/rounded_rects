@@ -11,7 +11,9 @@ export function get_token_points(
 ): Vec[] {
   if (possible_profiles.length == 0) return [];
   if (possible_profiles.length == 1 && orderly)
-    return get_orderly_token_points(cell_dim, possible_profiles[0].dim, rotation);
+    return Math.random() < 0.5
+      ? get_orderly_token_points(cell_dim, possible_profiles[0].dim, rotation)
+      : get_orderly_token_points2(cell_dim, possible_profiles[0].dim, rotation);
 
   let dim = Math.max(...possible_profiles.map((p) => mag(p.dim)));
 
@@ -39,10 +41,37 @@ function get_orderly_token_points(cell_dim: Vec, token_dim: Vec, rotation: numbe
   let rest_y = cell_dim.y - pad * 2 - (dim.y + pad) * y;
 
   let points = [];
-  for (let j = 0; j < y; j++) {
-    for (let i = 0; i < x; i++) {
+  for (let i = 0; i < x; i++) {
+    for (let j = 0; j < y; j++) {
       let px = pad + rest_x / 2 + (i + 0.5) * (dim.x + pad);
-      let py = pad + rest_y / 2 + (j + 0.5) * (dim.y + pad);
+      let py = pad + rest_y / 2 + (y - j - 0.5) * (dim.y + pad);
+      points.push(vec(px, py));
+    }
+  }
+
+  points.reverse();
+
+  return points;
+}
+
+function get_orderly_token_points2(cell_dim: Vec, token_dim: Vec, rotation: number): Vec[] {
+  let dim = rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
+  let pad = 15;
+  let frame = 5;
+  let x = Math.floor((cell_dim.x - frame * 2) / (dim.x + pad));
+  let y = Math.floor((cell_dim.y - frame * 2) / (dim.y + pad));
+
+  let rest_x = cell_dim.x - frame * 2 - (dim.x + pad) * x;
+  let rest_y = cell_dim.y - frame * 2 - (dim.y + pad) * y;
+
+  let inner_pad_x = rest_x / x;
+  let inner_pad_y = rest_y / y;
+
+  let points = [];
+  for (let i = 0; i < x; i++) {
+    for (let j = 0; j < y; j++) {
+      let px = frame + (i + 0.5) * (dim.x + pad + inner_pad_x);
+      let py = frame + (y - j - 0.5) * (dim.y + pad + inner_pad_y);
       points.push(vec(px, py));
     }
   }

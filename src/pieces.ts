@@ -1,15 +1,15 @@
 import { color_set } from './colors';
 import { BoardCell, Piece, PieceProfile, PieceSpec, RestrictionMap, Vec } from './interfaces';
-import { my_shuffle, pickAny, random_partition } from './util';
+import { my_shuffle, pickAny, random_int, random_partition } from './util';
 import { add, mul, vec } from './vector';
 
 export function get_pieces(piece_specs: PieceSpec[], cells: BoardCell[]) {
   let pieces: Piece[] = [];
   cells.forEach((c) => {
-    let prob = Math.random();
+    let prob = 0.2 + Math.random();
     let number_of_pieces = Math.round(c.token_points.length * prob);
 
-    let token_points = c.token_points.slice(0, number_of_pieces + 1);
+    let token_points = c.token_points.slice(0, number_of_pieces);
     let suitable_piece_specs = piece_specs.filter((s) => spec_meets_restrictions(s, c.restrictions));
 
     token_points.forEach((tp) => {
@@ -20,7 +20,7 @@ export function get_pieces(piece_specs: PieceSpec[], cells: BoardCell[]) {
       pieces.push({ spec, rotation, pos: add(tp, c.pos), shadow: true });
     });
 
-    if (token_points.length == 0 && c.dim.x < 300 && c.dim.y < 300 && c.id % 4 == 3) {
+    if (c.token_points.length == 0 && c.dim.x < 300 && c.dim.y < 300 && c.id % 4 == 3) {
       let dim = vec(c.dim.x - 25, c.dim.y - 25, 8);
       let col = suitable_piece_specs[0].color_id;
       let spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } };
@@ -37,36 +37,6 @@ export function get_pieces(piece_specs: PieceSpec[], cells: BoardCell[]) {
   });
 
   pieces.sort((a, b) => b.pos.x + b.pos.y - (a.pos.x + a.pos.y));
-  return pieces;
-}
-
-export function get_pieces2(
-  number_of_pieces: number,
-  profiles: PieceProfile[],
-  color_ids: number[],
-  cells: BoardCell[]
-) {
-  let token_points = cells.flatMap((c) =>
-    c.token_points.map((tp) => ({ pos: add(tp, c.pos), restr: c.restrictions, orderly: c.orderly }))
-  );
-  my_shuffle(token_points);
-  console.log('Token points: ', token_points.length);
-
-  token_points = token_points.slice(0, number_of_pieces);
-  token_points.sort((a, b) => b.pos.x + b.pos.y - (a.pos.x + a.pos.y));
-
-  let piece_specs = get_piece_specs(profiles, color_ids);
-
-  let pieces: Piece[] = [];
-  token_points.forEach((tp) => {
-    let suitable_piece_specs = piece_specs.filter((s) => spec_meets_restrictions(s, tp.restr));
-    let spec = pickAny(suitable_piece_specs);
-
-    let rotation_variance = tp.orderly ? 0.02 : 2;
-    let rotation = (Math.random() - 0.5) * Math.PI * rotation_variance;
-    pieces.push({ spec, rotation, pos: tp.pos });
-  });
-
   return pieces;
 }
 
@@ -102,8 +72,8 @@ export function get_piece_profiles(n: number): PieceProfile[] {
 }
 
 function get_random_piece_profile(id: number): PieceProfile {
-  let width = pickAny([40, 50, 60, 120]);
-  let length = pickAny([40, 50, 60, 120]);
+  let width = pickAny([40, 45, 50, 60, 120]);
+  let length = pickAny([40, 45, 50, 60, 120]);
   let height = 10 + Math.random() * 60;
 
   let dim = vec(length, width, height);

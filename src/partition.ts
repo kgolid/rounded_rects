@@ -3,8 +3,8 @@ import { PartitionCell, Vec } from './interfaces';
 import { my_shuffle, random_int } from './util';
 import { add, nullVector, sub, vec } from './vector';
 
-const min_dim = 0.09;
-const slice_chance = 0.35;
+const min_dim = 0.08;
+const slice_chance = 0.25;
 const PAD_RATIO = 0.003; //0.008;
 const terminal_chance: (d: number) => number = (d) => (d - 4) / 20;
 

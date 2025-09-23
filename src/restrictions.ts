@@ -17,7 +17,7 @@ export function fill_cells_with_restrictions(cells: BoardCell[], specs: PieceSpe
   cells.forEach((c) => (c.restrictions = restriction_map.get(c.id)));
 
   let orderly_map = new Map<number, boolean>();
-  ids.forEach((id) => orderly_map.set(id, Math.random() < 0.4));
+  ids.forEach((id) => orderly_map.set(id, Math.random() < 0.7));
   cells.forEach((c) => (c.orderly = orderly_map.get(c.id)));
 
   cells.forEach(

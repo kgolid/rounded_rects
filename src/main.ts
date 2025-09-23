@@ -11,6 +11,7 @@ let sketch = function (p: P5) {
   p.setup = function () {
     p.createCanvas(1500, 2100);
     p.pixelDensity(4);
+    //p.background('#f2f5e5');
     p.background('#c9cdc1');
     p.smooth();
     p.strokeJoin(p.ROUND);
