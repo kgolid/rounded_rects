@@ -36,7 +36,7 @@ export function display_piece(p: p5, piece: Piece, bc: (_: Vec) => Vec) {
   let color_id = piece.spec.color_id;
 
   let pnts = rounded_rect_points(pos, profile.dim, profile.corner_radius, 1, piece.rotation);
-  let top_pnts = pnts.map((t) => scale({ ...t, z: height }, pos, profile.tapering));
+  let top_pnts = pnts.map((t) => scale({ ...t, z: t.z + height }, pos, profile.tapering));
   let sides = get_sides(pnts, vec(0, 0, height), profile.tapering, pos);
 
   sides.forEach((s) => display_backdrop(p, s, color_id, bc));

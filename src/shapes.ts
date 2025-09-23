@@ -48,6 +48,8 @@ export function rounded_rect_points(
     ...ne_points,
   ];
 
+  points = points.map((t) => ({ ...t, z: pos.z }));
+
   return points.map((t) => rotate_around(t, pos, rotation));
 }
 

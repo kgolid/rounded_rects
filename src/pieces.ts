@@ -17,17 +17,22 @@ export function get_pieces(piece_specs: PieceSpec[], cells: BoardCell[]) {
 
       let rotation_variance = c.orderly ? 0.04 : 0.2;
       let rotation = c.rotation + (Math.random() - 0.5) * Math.PI * rotation_variance;
-      pieces.push({ spec, rotation, pos: add(tp, c.pos) });
+      pieces.push({ spec, rotation, pos: add(tp, c.pos), shadow: true });
     });
 
     if (token_points.length == 0 && c.dim.x < 300 && c.dim.y < 300 && c.id % 4 == 3) {
-      let dim = vec(c.dim.x - 25, c.dim.y - 25, 10);
+      let dim = vec(c.dim.x - 25, c.dim.y - 25, 8);
       let col = suitable_piece_specs[0].color_id;
-      pieces.push({
-        spec: { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } },
-        rotation: 0,
-        pos: add(c.pos, mul(c.dim, 0.5)),
-      });
+      let spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } };
+      let stack_height = 1 + random_int(4);
+      for (let i = 0; i < stack_height; i++) {
+        pieces.push({
+          spec,
+          rotation: i == 0 ? 0 : (Math.random() - 0.5) * Math.PI * 0.03,
+          pos: vec(c.pos.x + c.dim.x / 2, c.pos.y + c.dim.y / 2, i * 14), //add(c.pos, mul(c.dim, 0.5)),
+          shadow: i == 0,
+        });
+      }
     }
   });
 

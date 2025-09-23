@@ -44,6 +44,7 @@ export type Piece = {
   spec: PieceSpec;
   rotation: number;
   pos: Vec;
+  shadow: boolean;
 };
 
 export type PieceSpec = {

@@ -49,7 +49,7 @@ let sketch = function (p: P5) {
     board_cells.forEach((t) => display_cell(p, t, bc));
 
     let pieces = get_pieces(specs, board_cells);
-    pieces.forEach((t) => display_piece_shadow(p, t, bc));
+    pieces.forEach((t) => (t.shadow ? display_piece_shadow(p, t, bc) : {}));
     pieces.forEach((t) => display_piece(p, t, bc));
   };
 
