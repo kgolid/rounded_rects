@@ -1,7 +1,7 @@
-import { CELL_PAD, PIECE_MARGIN } from './globals';
-import { BoardCell, BoardCellSpec, GridCellSpec, PieceProfile, PieceSpec, ScatterCellSpec, Vec } from './interfaces';
+import { PIECE_MARGIN } from './globals';
+import { BoardCell, BoardCellSpec, GridCellSpec, PieceSpec, ScatterCellSpec, Vec } from './interfaces';
 import { decide_cell_wide_rotation } from './restrictions';
-import { pickAny } from './util';
+import { my_shuffle, pickAny } from './util';
 import { mag, mul, sub, vec } from './vector';
 import PoissonDiskSampling from 'poisson-disk-sampling';
 
@@ -58,8 +58,8 @@ export function get_token_points(cell_dim: Vec, cell_spec: BoardCellSpec): Vec[]
   if (cell_spec.type == 'single') return [];
   if (cell_spec.type == 'grid')
     return cell_spec.grid_layout == 'space-around'
-      ? get_orderly_token_points(cell_dim, cell_spec.grid_dim, piece_profile.dim, cell_spec.rotation)
-      : get_orderly_token_points2(cell_dim, cell_spec.grid_dim, piece_profile.dim, cell_spec.rotation);
+      ? get_orderly_token_points(cell_dim, cell_spec, piece_profile.dim)
+      : get_orderly_token_points2(cell_dim, cell_spec, piece_profile.dim);
 
   return get_scattered_token_points(cell_dim, piece_profile.dim);
 
@@ -93,11 +93,11 @@ function get_scattered_token_points(cell_dim: Vec, token_dim: Vec): Vec[] {
   return points;
 }
 
-function get_orderly_token_points(cell_dim: Vec, grid_dim: Vec, token_dim: Vec, rotation: number): Vec[] {
-  let dim = rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
+function get_orderly_token_points(cell_dim: Vec, cell_spec: GridCellSpec, token_dim: Vec): Vec[] {
+  let dim = cell_spec.rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
   let pad = PIECE_MARGIN;
-  let x = grid_dim.x;
-  let y = grid_dim.y;
+  let x = cell_spec.grid_dim.x;
+  let y = cell_spec.grid_dim.y;
 
   let rest_x = cell_dim.x - pad * 2 - (dim.x + pad) * x;
   let rest_y = cell_dim.y - pad * 2 - (dim.y + pad) * y;
@@ -116,13 +116,12 @@ function get_orderly_token_points(cell_dim: Vec, grid_dim: Vec, token_dim: Vec, 
   return points;
 }
 
-function get_orderly_token_points2(cell_dim: Vec, grid_dim: Vec, token_dim: Vec, rotation: number): Vec[] {
-  let dim = rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
+function get_orderly_token_points2(cell_dim: Vec, cell_spec: GridCellSpec, token_dim: Vec): Vec[] {
+  let dim = cell_spec.rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
   let pad = PIECE_MARGIN;
-  let frame = CELL_PAD;
 
-  let x = grid_dim.x;
-  let y = grid_dim.y;
+  let x = cell_spec.grid_dim.x;
+  let y = cell_spec.grid_dim.y;
 
   let rest_x = cell_dim.x - (dim.x + pad) * x;
   let rest_y = cell_dim.y - (dim.y + pad) * y;
@@ -140,6 +139,8 @@ function get_orderly_token_points2(cell_dim: Vec, grid_dim: Vec, token_dim: Vec,
   }
 
   points.reverse();
+
+  if (cell_spec.piece_distribution == 'random' || cell_spec.piece_distribution == 'single') points = my_shuffle(points);
 
   return points;
 }

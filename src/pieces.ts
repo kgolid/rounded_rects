@@ -1,7 +1,7 @@
 import { color_set } from './colors';
-import { BoardCell, Piece, PieceProfile, PieceSpec, RestrictionMap, Vec } from './interfaces';
+import { BoardCell, Piece, PieceProfile, PieceSpec } from './interfaces';
 import { my_shuffle, pickAny, random_int, random_partition } from './util';
-import { add, mul, vec } from './vector';
+import { add, vec } from './vector';
 
 export function get_pieces(cells: BoardCell[]) {
   let pieces: Piece[] = [];
@@ -9,8 +9,11 @@ export function get_pieces(cells: BoardCell[]) {
     let prob = 0.2 + Math.random();
     let number_of_pieces = Math.round(c.token_points.length * prob);
 
+    if (c.spec.type == 'grid' && c.spec.grid_layout == 'space-between' && c.spec.piece_distribution == 'single')
+      number_of_pieces = 1;
+
     let token_points = c.token_points.slice(0, number_of_pieces);
-    let suitable_piece_specs = c.spec.allowed_piece_specs; // piece_specs.filter((s) => spec_meets_restrictions(s, c.restrictions));
+    let suitable_piece_specs = c.spec.allowed_piece_specs;
 
     token_points.forEach((tp) => {
       let spec = pickAny(suitable_piece_specs);
@@ -25,6 +28,7 @@ export function get_pieces(cells: BoardCell[]) {
       let col = suitable_piece_specs[0].color_id;
       let spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } };
       let stack_height = 1 + random_int(4);
+
       for (let i = 0; i < stack_height; i++) {
         pieces.push({
           spec,
