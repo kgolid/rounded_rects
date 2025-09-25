@@ -1,5 +1,5 @@
 import { Vec } from './interfaces';
-import { add, lerp, mul, rotate_around, vec } from './vector';
+import { lerp, rotate_around, vec } from './vector';
 
 export function rounded_rect_points(
   pos: Vec,
@@ -12,6 +12,8 @@ export function rounded_rect_points(
   let outer_north = pos.y - dim.y / 2;
   let outer_east = pos.x + dim.x / 2;
   let outer_west = pos.x - dim.x / 2;
+
+  corner_radius = Math.min(corner_radius, Math.min(dim.y / 2, dim.x / 2));
 
   let inner_south = pos.y + dim.y / 2 - corner_radius;
   let inner_north = pos.y - dim.y / 2 + corner_radius;
