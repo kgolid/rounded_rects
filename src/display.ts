@@ -1,15 +1,17 @@
 import p5 from 'p5';
 import { BoardCell, Piece, Shape, Vec } from './interfaces';
-import { add, scale, shape, sub, vec } from './vector';
+import { add, lerp, mul, nullVector, scale, shape, sub, vec } from './vector';
 import { illuminanceOfEdge, illuminanceOfShape } from './light';
 import { color_set } from './colors';
 import { lch_scale } from './lch_scale';
 import { rounded_rect_points } from './shapes';
 import { get_sides, get_silhouette } from './blocks';
-import { random_int } from './util';
+import { get_alpha, random_int } from './util';
 import { hatchParallelogram } from './hatch';
 
-let sun = vec(-1400, -2200, 2500);
+//let sun = vec(-14000, -22000, 25000);
+let sun = vec(-4000, -6000, 6500);
+//let sun = vec(-1400, -2200, 2500);
 
 export function display_piece_shadow(p: p5, piece: Piece, bc: (_: Vec) => Vec) {
   if (piece.spec == undefined) return;
@@ -42,8 +44,8 @@ export function display_piece(p: p5, piece: Piece, bc: (_: Vec) => Vec) {
   sides.forEach((s) => display_backdrop(p, s, color_id, bc));
   display_backdrop(p, top_pnts, color_id, bc);
 
-  sides.forEach((s) => display_pnts(p, s, color_id, 10, bc));
-  display_pnts(p, top_pnts, color_id, 10, bc);
+  sides.forEach((s) => display_pnts(p, s, color_id, 20, bc));
+  display_pnts(p, top_pnts, color_id, 20, bc);
   display_face_edge(p, top_pnts, color_id, bc);
 }
 
@@ -110,7 +112,7 @@ export function display_face_edge(p: p5, pnts: Vec[], color_id: number, bc: (_: 
 
     const colorset = color_set[color_id];
 
-    const scale = lch_scale(colorset.c, 10); // TODO: number of levels
+    const scale = lch_scale(colorset.c, 20); // TODO: number of levels
     const illuminance = illuminanceOfEdge(sun, l1, l2, flat_quad, c1);
     const col = scale[Math.floor(illuminance * scale.length)];
 
@@ -138,16 +140,13 @@ function draw_line(p: p5, l1: Vec, l2: Vec, bc: (pnt: Vec) => Vec) {
 }
 
 export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
-  let dim = sub(cell.dim, vec(8, 8));
-  let pos = add(cell.pos, vec(4, 4));
+  let pad = nullVector(); //vec(8, 8);
+  let dim = sub(cell.dim, pad);
+  let pos = add(cell.pos, mul(pad, 0.5));
   let pnts = [pos, vec(pos.x, pos.y + dim.y), vec(pos.x + dim.x, pos.y + dim.y), vec(pos.x + dim.x, pos.y)];
 
-  // let illuminance = get_illum(pnts);
-  // let palette = lch_scale(color_set[1].c, 5);
-
-  // let color = palette[Math.floor(illuminance * palette.length)];
-  //p.fill(230, 240, 220);
   p.noFill();
+
   p.stroke('#9aa297');
   p.strokeWeight(2);
 
@@ -158,6 +157,43 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
   }
   p.endShape(p.CLOSE);
 
+  if (
+    cell.spec.type == 'grid' &&
+    cell.spec.grid_layout == 'space-between' &&
+    (cell.spec.grid_dim.x > 1 || cell.spec.grid_dim.y > 1)
+  ) {
+    let gd = cell.spec.grid_dim;
+
+    for (let i = 0; i < gd.x; i++) {
+      let p0 = bc(lerp(pnts[1], pnts[2], i / gd.x));
+      let p1 = bc(lerp(pnts[0], pnts[3], i / gd.x));
+      p.line(p0.x, p0.y, p1.x, p1.y);
+    }
+
+    for (let i = 0; i < gd.y; i++) {
+      let p0 = bc(lerp(pnts[0], pnts[1], i / gd.y));
+      let p1 = bc(lerp(pnts[3], pnts[2], i / gd.y));
+      p.line(p0.x, p0.y, p1.x, p1.y);
+    }
+
+    let num = random_int(100);
+    for (let i = 0; i < gd.x; i++) {
+      let px = lerp(pnts[0], pnts[3], (i + 0.5) / gd.x);
+      for (let j = 0; j < gd.y; j++) {
+        let py = lerp(pnts[0], pnts[1], (j + 0.5) / gd.y);
+        let tpos = bc(add(vec(px.x, py.y), vec(0, 0)));
+
+        let alpha = get_alpha(gd.x - 1 - (i % 26));
+        let coordinate_label = '' + num + '-' + alpha + '' + (j + 1);
+        let linear_label = '' + num + '-' + ((gd.x - 1 - i) * gd.y + j);
+
+        let label = cell.spec.indexing == 'coordinate' ? coordinate_label : linear_label;
+
+        display_text(p, tpos, label, 16, true);
+      }
+    }
+  }
+
   if (cell.token_points.length == 0) {
     let s = shape(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
     p.strokeWeight(2);
@@ -167,15 +203,28 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
     //p.line(bc(pnts[1]).x, bc(pnts[1]).y, bc(pnts[3]).x, bc(pnts[3]).y);
   } else {
     let tpos = bc(add(pnts[0], vec(10, 10)));
-    p.push();
-    p.fill('#9aa297');
-    p.noStroke();
-    p.translate(tpos.x, tpos.y);
-    p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
-    p.rotate(-Math.PI / 4);
-    p.textSize(18);
-    p.textStyle(p.BOLD);
-    p.text('C-' + cell.id + '-' + random_int(100), 0, 0);
-    p.pop();
+    let num = random_int(100);
+    let label = 'C-' + cell.id + '-' + num;
+    if (cell.spec.type == 'grid' && cell.spec.grid_layout == 'space-between') label = 'C-' + cell.id;
+
+    display_text(p, tpos, label, 18, false);
   }
+}
+
+function display_text(p: p5, pos: Vec, text: string, size: number, centered: boolean) {
+  p.push();
+  p.noStroke();
+  p.translate(pos.x, pos.y);
+  p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
+  p.rotate(-Math.PI / 4);
+  p.textSize(size);
+  if (centered) p.textAlign(p.CENTER, p.CENTER);
+  p.textStyle(p.BOLD);
+  p.fill('#9aa297');
+  p.stroke('#c9cdc1');
+  p.strokeWeight(4);
+  p.text(text, 0, 0);
+  p.noStroke();
+  p.text(text, 0, 0);
+  p.pop();
 }

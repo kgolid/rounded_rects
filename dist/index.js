@@ -754,6 +754,7 @@
 	    var outer_north = pos.y - dim.y / 2;
 	    var outer_east = pos.x + dim.x / 2;
 	    var outer_west = pos.x - dim.x / 2;
+	    corner_radius = Math.min(corner_radius, Math.min(dim.y / 2, dim.x / 2));
 	    var inner_south = pos.y + dim.y / 2 - corner_radius;
 	    var inner_north = pos.y - dim.y / 2 + corner_radius;
 	    var inner_east = pos.x + dim.x / 2 - corner_radius;
@@ -906,7 +907,7 @@
 	    ctx.restore();
 	}
 
-	var sun = vec(-1400, -2200, 2500);
+	var sun = vec(-4000, -6000, 6500);
 	function display_piece_shadow(p, piece, bc) {
 	    if (piece.spec == undefined)
 	        return;
@@ -931,8 +932,8 @@
 	    var sides = get_sides(pnts, vec(0, 0, height), profile.tapering, pos);
 	    sides.forEach(function (s) { return display_backdrop(p, s, color_id, bc); });
 	    display_backdrop(p, top_pnts, color_id, bc);
-	    sides.forEach(function (s) { return display_pnts(p, s, color_id, 10, bc); });
-	    display_pnts(p, top_pnts, color_id, 10, bc);
+	    sides.forEach(function (s) { return display_pnts(p, s, color_id, 20, bc); });
+	    display_pnts(p, top_pnts, color_id, 20, bc);
 	    display_face_edge(p, top_pnts, color_id, bc);
 	}
 	function display_pnts(p, pnts, color_id, color_levels, bc, outline) {
@@ -983,7 +984,7 @@
 	            continue;
 	        var c1 = shape(l1, l2, add(l2, vec(0, 0, 10)), add(l1, vec(0, 0, 10)));
 	        var colorset = color_set[color_id];
-	        var scale_1 = lch_scale(colorset.c, 10);
+	        var scale_1 = lch_scale(colorset.c, 20);
 	        var illuminance = illuminanceOfEdge(sun, l1, l2, flat_quad, c1);
 	        var col = scale_1[Math.floor(illuminance * scale_1.length)];
 	        p.strokeWeight(2);
@@ -1034,25 +1035,17 @@
 	            var p1 = bc(lerp$1(pnts[3], pnts[2], i / gd.y));
 	            p.line(p0.x, p0.y, p1.x, p1.y);
 	        }
+	        var num = random_int(100);
 	        for (var i = 0; i < gd.x; i++) {
 	            var px = lerp$1(pnts[0], pnts[3], (i + 0.5) / gd.x);
 	            for (var j = 0; j < gd.y; j++) {
 	                var py = lerp$1(pnts[0], pnts[1], (j + 0.5) / gd.y);
 	                var tpos = bc(add(vec(px.x, py.y), vec(0, 0)));
 	                var alpha = get_alpha(gd.x - 1 - (i % 26));
-	                var coordinate_label = alpha + '' + (j + 1);
-	                var linear_label = '' + ((gd.x - 1 - i) * gd.y + j);
-	                p.push();
-	                p.fill('#9aa297');
-	                p.noStroke();
-	                p.translate(tpos.x, tpos.y);
-	                p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
-	                p.rotate(-Math.PI / 4);
-	                p.textSize(16);
-	                p.textAlign(p.CENTER, p.CENTER);
-	                p.textStyle(p.BOLD);
-	                p.text(cell.spec.indexing == 'coordinate' ? coordinate_label : linear_label, 0, 0);
-	                p.pop();
+	                var coordinate_label = '' + num + '-' + alpha + '' + (j + 1);
+	                var linear_label = '' + num + '-' + ((gd.x - 1 - i) * gd.y + j);
+	                var label = cell.spec.indexing == 'coordinate' ? coordinate_label : linear_label;
+	                display_text(p, tpos, label, 16, true);
 	            }
 	        }
 	    }
@@ -1064,21 +1057,29 @@
 	    else {
 	        var tpos = bc(add(pnts[0], vec(10, 10)));
 	        var num = random_int(100);
-	        p.push();
-	        p.noStroke();
-	        p.translate(tpos.x, tpos.y);
-	        p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
-	        p.rotate(-Math.PI / 4);
-	        p.textSize(18);
-	        p.textStyle(p.BOLD);
-	        p.fill('#9aa297');
-	        p.stroke('#c9cdc1');
-	        p.strokeWeight(4);
-	        p.text('C-' + cell.id + '-' + num, 0, 0);
-	        p.noStroke();
-	        p.text('C-' + cell.id + '-' + num, 0, 0);
-	        p.pop();
+	        var label = 'C-' + cell.id + '-' + num;
+	        if (cell.spec.type == 'grid' && cell.spec.grid_layout == 'space-between')
+	            label = 'C-' + cell.id;
+	        display_text(p, tpos, label, 18, false);
 	    }
+	}
+	function display_text(p, pos, text, size, centered) {
+	    p.push();
+	    p.noStroke();
+	    p.translate(pos.x, pos.y);
+	    p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
+	    p.rotate(-Math.PI / 4);
+	    p.textSize(size);
+	    if (centered)
+	        p.textAlign(p.CENTER, p.CENTER);
+	    p.textStyle(p.BOLD);
+	    p.fill('#9aa297');
+	    p.stroke('#c9cdc1');
+	    p.strokeWeight(4);
+	    p.text(text, 0, 0);
+	    p.noStroke();
+	    p.text(text, 0, 0);
+	    p.pop();
 	}
 
 	function get_base_change_function(scale, rotation, translation) {
@@ -2047,8 +2048,8 @@
 	        return [];
 	    if (cell_spec.type == 'grid')
 	        return cell_spec.grid_layout == 'space-around'
-	            ? get_orderly_token_points(cell_dim, cell_spec.grid_dim, piece_profile.dim, cell_spec.rotation)
-	            : get_orderly_token_points2(cell_dim, cell_spec.grid_dim, piece_profile.dim, cell_spec.rotation);
+	            ? get_orderly_token_points(cell_dim, cell_spec, piece_profile.dim)
+	            : get_orderly_token_points2(cell_dim, cell_spec, piece_profile.dim);
 	    return get_scattered_token_points(cell_dim, piece_profile.dim);
 	}
 	function get_scattered_token_points(cell_dim, token_dim) {
@@ -2066,11 +2067,11 @@
 	    points.sort(function (a, b) { return mag(sub(a, mul(cell_dim, 0.5))) - mag(sub(b, mul(cell_dim, 0.5))); });
 	    return points;
 	}
-	function get_orderly_token_points(cell_dim, grid_dim, token_dim, rotation) {
-	    var dim = rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
+	function get_orderly_token_points(cell_dim, cell_spec, token_dim) {
+	    var dim = cell_spec.rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
 	    var pad = PIECE_MARGIN;
-	    var x = grid_dim.x;
-	    var y = grid_dim.y;
+	    var x = cell_spec.grid_dim.x;
+	    var y = cell_spec.grid_dim.y;
 	    var rest_x = cell_dim.x - pad * 2 - (dim.x + pad) * x;
 	    var rest_y = cell_dim.y - pad * 2 - (dim.y + pad) * y;
 	    var points = [];
@@ -2084,11 +2085,11 @@
 	    points.reverse();
 	    return points;
 	}
-	function get_orderly_token_points2(cell_dim, grid_dim, token_dim, rotation) {
-	    var dim = rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
+	function get_orderly_token_points2(cell_dim, cell_spec, token_dim) {
+	    var dim = cell_spec.rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
 	    var pad = PIECE_MARGIN;
-	    var x = grid_dim.x;
-	    var y = grid_dim.y;
+	    var x = cell_spec.grid_dim.x;
+	    var y = cell_spec.grid_dim.y;
 	    var rest_x = cell_dim.x - (dim.x + pad) * x;
 	    var rest_y = cell_dim.y - (dim.y + pad) * y;
 	    var inner_pad_x = rest_x / x;
@@ -2102,6 +2103,8 @@
 	        }
 	    }
 	    points.reverse();
+	    if (cell_spec.piece_distribution == 'random' || cell_spec.piece_distribution == 'single')
+	        points = my_shuffle(points);
 	    return points;
 	}
 	function board_cell(id, pos, dim, spec, token_points) {
@@ -2114,6 +2117,8 @@
 	    cells.forEach(function (c) {
 	        var prob = 0.2 + Math.random();
 	        var number_of_pieces = Math.round(c.token_points.length * prob);
+	        if (c.spec.type == 'grid' && c.spec.grid_layout == 'space-between' && c.spec.piece_distribution == 'single')
+	            number_of_pieces = 1;
 	        var token_points = c.token_points.slice(0, number_of_pieces);
 	        var suitable_piece_specs = c.spec.allowed_piece_specs;
 	        token_points.forEach(function (tp) {
@@ -2165,7 +2170,7 @@
 	function get_random_piece_profile(id) {
 	    var width = pickAny([40, 45, 50, 60, 120]);
 	    var length = pickAny([40, 45, 50, 60, 120]);
-	    var height = 10 + Math.random() * 60;
+	    var height = Math.max(10, pickAny([0.1, 0.2, 0.4, 0.6, 0.8, 1]) * Math.min(length, width));
 	    var dim = vec(length, width, height);
 	    var corner_radius = pickAny([0.05, 0.1, 0.2, 0.499]) * Math.min(length, width);
 	    var tapering = height < 30 ? 1 : pickAny([0.75, 0.9, 1, 1]);
@@ -2302,7 +2307,7 @@
 	        var bc = get_base_change_function(1, 0);
 	        p.strokeWeight(1);
 	        var number_of_profiles = 5;
-	        var number_of_colors = 5;
+	        var number_of_colors = 4;
 	        var ref_dim = Math.max(p.width, p.height);
 	        var profiles = get_piece_profiles(number_of_profiles);
 	        var color_ids = get_piece_color_ids(number_of_colors);
