@@ -3,20 +3,20 @@ import { BoardCell, Piece, PieceProfile, PieceSpec, RestrictionMap, Vec } from '
 import { my_shuffle, pickAny, random_int, random_partition } from './util';
 import { add, mul, vec } from './vector';
 
-export function get_pieces(piece_specs: PieceSpec[], cells: BoardCell[]) {
+export function get_pieces(cells: BoardCell[]) {
   let pieces: Piece[] = [];
   cells.forEach((c) => {
     let prob = 0.2 + Math.random();
     let number_of_pieces = Math.round(c.token_points.length * prob);
 
     let token_points = c.token_points.slice(0, number_of_pieces);
-    let suitable_piece_specs = piece_specs.filter((s) => spec_meets_restrictions(s, c.restrictions));
+    let suitable_piece_specs = c.spec.allowed_piece_specs; // piece_specs.filter((s) => spec_meets_restrictions(s, c.restrictions));
 
     token_points.forEach((tp) => {
       let spec = pickAny(suitable_piece_specs);
 
-      let rotation_variance = c.orderly ? 0.04 : 0.2;
-      let rotation = c.rotation + (Math.random() - 0.5) * Math.PI * rotation_variance;
+      let rotation_variance = c.spec.type == 'grid' ? 0.04 : 0.2;
+      let rotation = c.spec.rotation + (Math.random() - 0.5) * Math.PI * rotation_variance;
       pieces.push({ spec, rotation, pos: add(tp, c.pos), shadow: true });
     });
 
@@ -38,10 +38,6 @@ export function get_pieces(piece_specs: PieceSpec[], cells: BoardCell[]) {
 
   pieces.sort((a, b) => b.pos.x + b.pos.y - (a.pos.x + a.pos.y));
   return pieces;
-}
-
-function spec_meets_restrictions(spec: PieceSpec, restr: RestrictionMap) {
-  return restr.color_id(spec.color_id) && restr.profile_id(spec.profile.id);
 }
 
 export function get_piece_specs(profiles: PieceProfile[], color_ids: number[]) {

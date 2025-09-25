@@ -3,9 +3,9 @@ import { PartitionCell, Vec } from './interfaces';
 import { my_shuffle, random_int } from './util';
 import { add, nullVector, sub, vec } from './vector';
 
-const min_dim = 0.08;
-const slice_chance = 0.25;
-const PAD_RATIO = 0.003; //0.008;
+const min_dim = 0.085;
+const slice_chance = 0.4;
+const PAD_RATIO = 0; //0.0002; //0.008;
 const terminal_chance: (d: number) => number = (d) => (d - 4) / 20;
 
 export function create_supergrid() {
@@ -36,7 +36,7 @@ function divide_cells_repeatedly(cells: PartitionCell[], iteration: number) {
 
   let picked_cells = cells
     .filter((c) => c.id == pick_id)
-    .map((c) => pad_cell(c, c.depth < 9 ? PAD_RATIO / (1 + c.depth) : 0));
+    .map((c) => pad_cell(c, c.depth < 9 ? PAD_RATIO * Math.pow(c.depth, 2) : 0));
   let unpicked_cells = cells.filter((c) => c.id != pick_id);
 
   let divided_cells = divide_cell(picked_cells[0], iteration);
@@ -59,7 +59,7 @@ function divide_cells_repeatedly(cells: PartitionCell[], iteration: number) {
 }
 
 function divide_cell(c: PartitionCell, iteration: number): PartitionCell[] {
-  let pad = 0; //(0.1 / (c.depth + 1)) ** 1.5;
+  let pad = c.depth >= 7 ? 0 : 0.0025 + (0.1 / (c.depth + 1)) ** 2;
   //if (iteration < 1) return split_cell(c, pad);
 
   let pick_slice = Math.random() < slice_chance;
@@ -74,6 +74,9 @@ function slice_cell(c: PartitionCell, pad: number): PartitionCell[] {
   let x_cells = 1 + random_int(max_x_cells);
   let y_cells = 1 + random_int(max_y_cells);
 
+  let pad_x = x_cells == 1 ? 0 : pad;
+  let pad_y = y_cells == 1 ? 0 : pad;
+
   let depth_increase = Math.round(Math.log2(x_cells * y_cells));
 
   let cell_width = c.dim.x / x_cells;
@@ -86,8 +89,8 @@ function slice_cell(c: PartitionCell, pad: number): PartitionCell[] {
   let cells = [];
   for (let j = 0; j < y_cells; j++) {
     for (let i = 0; i < x_cells; i++) {
-      let pos = vec(i * cell_width, j * cell_height, 0);
-      let dim = vec(cell_width, cell_height, c.dim.z);
+      let pos = vec(pad_x / 2 + i * cell_width, pad_y / 2 + j * cell_height, 0);
+      let dim = vec(cell_width - pad_x, cell_height - pad_y, c.dim.z);
 
       let new_cell = cell(pos, dim, depth, terminal, id);
       cells.push(new_cell);

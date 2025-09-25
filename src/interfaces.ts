@@ -17,13 +17,40 @@ export type PartitionCell = {
 
 export type BoardCell = {
   id: number;
-  grid_pos: Vec;
   pos: Vec;
   dim: Vec; // TODO: generalize to bounding box?
   token_points: Vec[];
-  restrictions: RestrictionMap;
+  //restrictions: RestrictionMap;
+  //rotation: number;
+  //orderly: boolean;
+
+  spec: BoardCellSpec;
+};
+
+export type BoardCellSpec = ScatterCellSpec | GridCellSpec | SingleCellSpec;
+
+export type BaseCellSpec = {
+  type: string;
+  allowed_piece_specs: PieceSpec[];
   rotation: number;
-  orderly: boolean;
+};
+
+export type SingleCellSpec = BaseCellSpec & {
+  type: 'single';
+  max_stack_size: number;
+};
+
+export type ScatterCellSpec = BaseCellSpec & {
+  type: 'scatter';
+  piece_dist: number;
+};
+
+export type GridCellSpec = BaseCellSpec & {
+  type: 'grid';
+  grid_dim: Vec;
+  grid_layout: string; // space-around, space-between
+  piece_distribution: string; // ltr, random, single
+  indexing: string; // coordinate, linear
 };
 
 export type ColorEntry = {

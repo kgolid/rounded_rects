@@ -817,6 +817,10 @@
 	    shuffled_map.forEach(function (x, i) { return partition[x].push(arr[i]); });
 	    return partition;
 	}
+	function get_alpha(i) {
+	    var a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	    return a.charAt(i);
+	}
 
 	function get_silhouette(plane_pnts, extraction, scale_number, scale_anchor) {
 	    if (scale_number === void 0) { scale_number = 1; }
@@ -1003,8 +1007,9 @@
 	    p.line(p1.x, p1.y, p2.x, p2.y);
 	}
 	function display_cell(p, cell, bc) {
-	    var dim = sub(cell.dim, vec(8, 8));
-	    var pos = add(cell.pos, vec(4, 4));
+	    var pad = nullVector();
+	    var dim = sub(cell.dim, pad);
+	    var pos = add(cell.pos, mul(pad, 0.5));
 	    var pnts = [pos, vec(pos.x, pos.y + dim.y), vec(pos.x + dim.x, pos.y + dim.y), vec(pos.x + dim.x, pos.y)];
 	    p.noFill();
 	    p.stroke('#9aa297');
@@ -1015,6 +1020,42 @@
 	        p.vertex(pnt.x, pnt.y);
 	    }
 	    p.endShape(p.CLOSE);
+	    if (cell.spec.type == 'grid' &&
+	        cell.spec.grid_layout == 'space-between' &&
+	        (cell.spec.grid_dim.x > 1 || cell.spec.grid_dim.y > 1)) {
+	        var gd = cell.spec.grid_dim;
+	        for (var i = 0; i < gd.x; i++) {
+	            var p0 = bc(lerp$1(pnts[1], pnts[2], i / gd.x));
+	            var p1 = bc(lerp$1(pnts[0], pnts[3], i / gd.x));
+	            p.line(p0.x, p0.y, p1.x, p1.y);
+	        }
+	        for (var i = 0; i < gd.y; i++) {
+	            var p0 = bc(lerp$1(pnts[0], pnts[1], i / gd.y));
+	            var p1 = bc(lerp$1(pnts[3], pnts[2], i / gd.y));
+	            p.line(p0.x, p0.y, p1.x, p1.y);
+	        }
+	        for (var i = 0; i < gd.x; i++) {
+	            var px = lerp$1(pnts[0], pnts[3], (i + 0.5) / gd.x);
+	            for (var j = 0; j < gd.y; j++) {
+	                var py = lerp$1(pnts[0], pnts[1], (j + 0.5) / gd.y);
+	                var tpos = bc(add(vec(px.x, py.y), vec(0, 0)));
+	                var alpha = get_alpha(gd.x - 1 - (i % 26));
+	                var coordinate_label = alpha + '' + (j + 1);
+	                var linear_label = '' + ((gd.x - 1 - i) * gd.y + j);
+	                p.push();
+	                p.fill('#9aa297');
+	                p.noStroke();
+	                p.translate(tpos.x, tpos.y);
+	                p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
+	                p.rotate(-Math.PI / 4);
+	                p.textSize(16);
+	                p.textAlign(p.CENTER, p.CENTER);
+	                p.textStyle(p.BOLD);
+	                p.text(cell.spec.indexing == 'coordinate' ? coordinate_label : linear_label, 0, 0);
+	                p.pop();
+	            }
+	        }
+	    }
 	    if (cell.token_points.length == 0) {
 	        var s = shape(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
 	        p.strokeWeight(2);
@@ -1022,15 +1063,20 @@
 	    }
 	    else {
 	        var tpos = bc(add(pnts[0], vec(10, 10)));
+	        var num = random_int(100);
 	        p.push();
-	        p.fill('#9aa297');
 	        p.noStroke();
 	        p.translate(tpos.x, tpos.y);
 	        p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
 	        p.rotate(-Math.PI / 4);
 	        p.textSize(18);
 	        p.textStyle(p.BOLD);
-	        p.text('C-' + cell.id + '-' + random_int(100), 0, 0);
+	        p.fill('#9aa297');
+	        p.stroke('#c9cdc1');
+	        p.strokeWeight(4);
+	        p.text('C-' + cell.id + '-' + num, 0, 0);
+	        p.noStroke();
+	        p.text('C-' + cell.id + '-' + num, 0, 0);
 	        p.pop();
 	    }
 	}
@@ -1051,40 +1097,17 @@
 	    return [b1, b2, b3].map(function (b) { return mul(b, scale); });
 	}
 
-	var always_true = function (_) { return true; };
-	var trivial_restriction = {
-	    type: 'trivial',
-	    profile_id: always_true,
-	    color_id: always_true
+	var cell_count = 0;
+	var generate_cell_id = function () {
+	    cell_count++;
+	    return cell_count;
 	};
-	function fill_cells_with_restrictions(cells, specs, profiles) {
-	    var ids = new Set(cells.map(function (c) { return c.id; }));
-	    var restriction_map = new Map();
-	    ids.forEach(function (id) { return restriction_map.set(id, random_restriction(specs)); });
-	    cells.forEach(function (c) { return (c.restrictions = restriction_map.get(c.id)); });
-	    var orderly_map = new Map();
-	    ids.forEach(function (id) { return orderly_map.set(id, Math.random() < 0.7); });
-	    cells.forEach(function (c) { return (c.orderly = orderly_map.get(c.id)); });
-	    cells.forEach(function (t) {
-	        return (t.rotation = t.orderly
-	            ? decide_cell_wide_rotation(t, profiles.find(function (p) { return t.restrictions.profile_id(p.id); }))
-	            : (Math.random() * Math.PI) / 2);
-	    });
-	}
-	function random_restriction(specs) {
-	    var chosen_spec = pickAny(specs);
-	    var chosen_color_id = chosen_spec.color_id;
-	    var chosen_profile_id = chosen_spec.profile.id;
-	    var is_spec_restriction = Math.random() < 0.5;
-	    var type = is_spec_restriction ? 'spec' : 'profile';
-	    var profile_predicate = function (t) { return t == chosen_profile_id; };
-	    var color_predicate = is_spec_restriction ? function (t) { return t == chosen_color_id; } : always_true;
-	    return { type: type, color_id: color_predicate, profile_id: profile_predicate };
-	}
-	function decide_cell_wide_rotation(cell, profile) {
-	    if (cell.dim.x - 30 < profile.dim.x + 15 || cell.dim.y - 30 < profile.dim.y + 15)
+	var PIECE_MARGIN = 15;
+
+	function decide_cell_wide_rotation(cell_dim, profile) {
+	    if (cell_dim.x - 30 < profile.dim.x + 15 || cell_dim.y - 30 < profile.dim.y + 15)
 	        return Math.PI / 2;
-	    if (cell.dim.y - 30 < profile.dim.x + 15 || cell.dim.x - 30 < profile.dim.y + 15)
+	    if (cell_dim.y - 30 < profile.dim.x + 15 || cell_dim.x - 30 < profile.dim.y + 15)
 	        return 0;
 	    return pickAny([0, Math.PI / 2]);
 	}
@@ -1980,14 +2003,56 @@
 
 	var poissonDiskSampling = PoissonDiskSampling;
 
-	function get_token_points(cell_dim, possible_profiles, orderly, rotation) {
-	    if (possible_profiles.length == 0)
+	function fill_with_cell_specs(cells, piece_specs) {
+	    var ids = new Set(cells.map(function (c) { return c.id; }));
+	    var spec_map = new Map();
+	    ids.forEach(function (id) { return spec_map.set(id, get_cell_spec(cells.find(function (c) { return c.id == id; }).dim, piece_specs)); });
+	    cells.forEach(function (c) { return (c.spec = spec_map.get(c.id)); });
+	}
+	function get_cell_spec(dim, piece_specs) {
+	    var has_spec_requirement = Math.random() < 0.5;
+	    var chosen_spec = pickAny(piece_specs);
+	    var allowed_piece_specs = has_spec_requirement
+	        ? [chosen_spec]
+	        : piece_specs.filter(function (t) { return t.profile == chosen_spec.profile; });
+	    var cell_type = pickAny(['scatter', 'grid']);
+	    if (cell_type == 'scatter') {
+	        return get_scatter_cell_spec(allowed_piece_specs);
+	    }
+	    if (cell_type == 'grid') {
+	        return get_grid_cell_spec(dim, allowed_piece_specs);
+	    }
+	}
+	function get_scatter_cell_spec(allowed_piece_specs) {
+	    var profile = allowed_piece_specs[0].profile;
+	    var rotation = (Math.random() * Math.PI) / 2;
+	    var piece_dist = mag(profile.dim) + PIECE_MARGIN;
+	    return { type: 'scatter', allowed_piece_specs: allowed_piece_specs, rotation: rotation, piece_dist: piece_dist };
+	}
+	function get_grid_cell_spec(dim, allowed_piece_specs) {
+	    var profile = allowed_piece_specs[0].profile;
+	    var rotation = decide_cell_wide_rotation(dim, profile);
+	    var piece_dim = rotation == 0 ? profile.dim : vec(profile.dim.y, profile.dim.x, profile.dim.z);
+	    var x = Math.floor(dim.x / (piece_dim.x + PIECE_MARGIN));
+	    var y = Math.floor(dim.y / (piece_dim.y + PIECE_MARGIN));
+	    var grid_dim = vec(x, y);
+	    var grid_layout = pickAny(['space-around', 'space-between']);
+	    var piece_distribution = pickAny(['ltr', 'random', 'single']);
+	    var indexing = pickAny(['coordinate', 'linear']);
+	    return { type: 'grid', allowed_piece_specs: allowed_piece_specs, rotation: rotation, grid_dim: grid_dim, grid_layout: grid_layout, piece_distribution: piece_distribution, indexing: indexing };
+	}
+	function get_token_points(cell_dim, cell_spec) {
+	    var piece_profile = cell_spec.allowed_piece_specs[0].profile;
+	    if (cell_spec.type == 'single')
 	        return [];
-	    if (possible_profiles.length == 1 && orderly)
-	        return Math.random() < 0.5
-	            ? get_orderly_token_points(cell_dim, possible_profiles[0].dim, rotation)
-	            : get_orderly_token_points2(cell_dim, possible_profiles[0].dim, rotation);
-	    var dim = Math.max.apply(Math, possible_profiles.map(function (p) { return mag(p.dim); }));
+	    if (cell_spec.type == 'grid')
+	        return cell_spec.grid_layout == 'space-around'
+	            ? get_orderly_token_points(cell_dim, cell_spec.grid_dim, piece_profile.dim, cell_spec.rotation)
+	            : get_orderly_token_points2(cell_dim, cell_spec.grid_dim, piece_profile.dim, cell_spec.rotation);
+	    return get_scattered_token_points(cell_dim, piece_profile.dim);
+	}
+	function get_scattered_token_points(cell_dim, token_dim) {
+	    var dim = mag(token_dim);
 	    var pad = dim / 2 + 5;
 	    if (cell_dim.x < 2 * pad || cell_dim.y < 2 * pad)
 	        return [];
@@ -2001,11 +2066,11 @@
 	    points.sort(function (a, b) { return mag(sub(a, mul(cell_dim, 0.5))) - mag(sub(b, mul(cell_dim, 0.5))); });
 	    return points;
 	}
-	function get_orderly_token_points(cell_dim, token_dim, rotation) {
+	function get_orderly_token_points(cell_dim, grid_dim, token_dim, rotation) {
 	    var dim = rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
-	    var pad = 15;
-	    var x = Math.floor((cell_dim.x - pad * 2) / (dim.x + pad));
-	    var y = Math.floor((cell_dim.y - pad * 2) / (dim.y + pad));
+	    var pad = PIECE_MARGIN;
+	    var x = grid_dim.x;
+	    var y = grid_dim.y;
 	    var rest_x = cell_dim.x - pad * 2 - (dim.x + pad) * x;
 	    var rest_y = cell_dim.y - pad * 2 - (dim.y + pad) * y;
 	    var points = [];
@@ -2019,45 +2084,42 @@
 	    points.reverse();
 	    return points;
 	}
-	function get_orderly_token_points2(cell_dim, token_dim, rotation) {
+	function get_orderly_token_points2(cell_dim, grid_dim, token_dim, rotation) {
 	    var dim = rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
-	    var pad = 15;
-	    var frame = 5;
-	    var x = Math.floor((cell_dim.x - frame * 2) / (dim.x + pad));
-	    var y = Math.floor((cell_dim.y - frame * 2) / (dim.y + pad));
-	    var rest_x = cell_dim.x - frame * 2 - (dim.x + pad) * x;
-	    var rest_y = cell_dim.y - frame * 2 - (dim.y + pad) * y;
+	    var pad = PIECE_MARGIN;
+	    var x = grid_dim.x;
+	    var y = grid_dim.y;
+	    var rest_x = cell_dim.x - (dim.x + pad) * x;
+	    var rest_y = cell_dim.y - (dim.y + pad) * y;
 	    var inner_pad_x = rest_x / x;
 	    var inner_pad_y = rest_y / y;
 	    var points = [];
 	    for (var i = 0; i < x; i++) {
 	        for (var j = 0; j < y; j++) {
-	            var px = frame + (i + 0.5) * (dim.x + pad + inner_pad_x);
-	            var py = frame + (y - j - 0.5) * (dim.y + pad + inner_pad_y);
+	            var px = (i + 0.5) * (dim.x + pad + inner_pad_x);
+	            var py = (y - j - 0.5) * (dim.y + pad + inner_pad_y);
 	            points.push(vec(px, py));
 	        }
 	    }
 	    points.reverse();
 	    return points;
 	}
-	function board_cell(id, grid_pos, pos, dim, orderly, rotation, token_points, restrictions) {
-	    if (rotation === void 0) { rotation = 0; }
+	function board_cell(id, pos, dim, spec, token_points) {
 	    if (token_points === void 0) { token_points = []; }
-	    if (restrictions === void 0) { restrictions = trivial_restriction; }
-	    return { id: id, grid_pos: grid_pos, pos: pos, dim: dim, orderly: orderly, rotation: rotation, token_points: token_points, restrictions: restrictions };
+	    return { id: id, pos: pos, dim: dim, spec: spec, token_points: token_points };
 	}
 
-	function get_pieces(piece_specs, cells) {
+	function get_pieces(cells) {
 	    var pieces = [];
 	    cells.forEach(function (c) {
 	        var prob = 0.2 + Math.random();
 	        var number_of_pieces = Math.round(c.token_points.length * prob);
 	        var token_points = c.token_points.slice(0, number_of_pieces);
-	        var suitable_piece_specs = piece_specs.filter(function (s) { return spec_meets_restrictions(s, c.restrictions); });
+	        var suitable_piece_specs = c.spec.allowed_piece_specs;
 	        token_points.forEach(function (tp) {
 	            var spec = pickAny(suitable_piece_specs);
-	            var rotation_variance = c.orderly ? 0.04 : 0.2;
-	            var rotation = c.rotation + (Math.random() - 0.5) * Math.PI * rotation_variance;
+	            var rotation_variance = c.spec.type == 'grid' ? 0.04 : 0.2;
+	            var rotation = c.spec.rotation + (Math.random() - 0.5) * Math.PI * rotation_variance;
 	            pieces.push({ spec: spec, rotation: rotation, pos: add(tp, c.pos), shadow: true });
 	        });
 	        if (c.token_points.length == 0 && c.dim.x < 300 && c.dim.y < 300 && c.id % 4 == 3) {
@@ -2077,9 +2139,6 @@
 	    });
 	    pieces.sort(function (a, b) { return b.pos.x + b.pos.y - (a.pos.x + a.pos.y); });
 	    return pieces;
-	}
-	function spec_meets_restrictions(spec, restr) {
-	    return restr.color_id(spec.color_id) && restr.profile_id(spec.profile.id);
 	}
 	function get_piece_specs(profiles, color_ids) {
 	    var number_of_groups = 2;
@@ -2117,15 +2176,9 @@
 	    return colors.slice(0, n);
 	}
 
-	var cell_count = 0;
-	var generate_cell_id = function () {
-	    cell_count++;
-	    return cell_count;
-	};
-
-	var min_dim = 0.08;
-	var slice_chance = 0.25;
-	var PAD_RATIO = 0.003;
+	var min_dim = 0.085;
+	var slice_chance = 0.4;
+	var PAD_RATIO = 0;
 	var terminal_chance = function (d) { return (d - 4) / 20; };
 	function create_supergrid() {
 	    var grid = [cell(vec(-0.5, -0.5), vec(1, 1, 0), 0)];
@@ -2147,7 +2200,7 @@
 	    var pick_id = my_shuffle(Array.from(ids))[0];
 	    var picked_cells = cells
 	        .filter(function (c) { return c.id == pick_id; })
-	        .map(function (c) { return pad_cell(c, c.depth < 9 ? PAD_RATIO / (1 + c.depth) : 0); });
+	        .map(function (c) { return pad_cell(c, c.depth < 9 ? PAD_RATIO * Math.pow(c.depth, 2) : 0); });
 	    var unpicked_cells = cells.filter(function (c) { return c.id != pick_id; });
 	    var divided_cells = divide_cell(picked_cells[0]);
 	    var new_cells = picked_cells.flatMap(function (pc) {
@@ -2156,10 +2209,10 @@
 	    return divide_cells_repeatedly(__spreadArray(__spreadArray([], unpicked_cells, true), new_cells, true), iteration + 1);
 	}
 	function divide_cell(c, iteration) {
-	    var pad = 0;
+	    var pad = c.depth >= 7 ? 0 : 0.0025 + Math.pow((0.1 / (c.depth + 1)), 2);
 	    var pick_slice = Math.random() < slice_chance;
 	    if (pick_slice)
-	        return slice_cell(c);
+	        return slice_cell(c, pad);
 	    return split_cell(c, pad);
 	}
 	function slice_cell(c, pad) {
@@ -2167,6 +2220,8 @@
 	    var max_y_cells = Math.min(5, Math.floor(c.dim.y / min_dim));
 	    var x_cells = 1 + random_int(max_x_cells);
 	    var y_cells = 1 + random_int(max_y_cells);
+	    var pad_x = x_cells == 1 ? 0 : pad;
+	    var pad_y = y_cells == 1 ? 0 : pad;
 	    var depth_increase = Math.round(Math.log2(x_cells * y_cells));
 	    var cell_width = c.dim.x / x_cells;
 	    var cell_height = c.dim.y / y_cells;
@@ -2176,8 +2231,8 @@
 	    var cells = [];
 	    for (var j = 0; j < y_cells; j++) {
 	        for (var i = 0; i < x_cells; i++) {
-	            var pos = vec(i * cell_width, j * cell_height, 0);
-	            var dim = vec(cell_width, cell_height, c.dim.z);
+	            var pos = vec(pad_x / 2 + i * cell_width, pad_y / 2 + j * cell_height, 0);
+	            var dim = vec(cell_width - pad_x, cell_height - pad_y, c.dim.z);
 	            var new_cell = cell(pos, dim, depth, terminal, id);
 	            cells.push(new_cell);
 	        }
@@ -2251,17 +2306,15 @@
 	        var ref_dim = Math.max(p.width, p.height);
 	        var profiles = get_piece_profiles(number_of_profiles);
 	        var color_ids = get_piece_color_ids(number_of_colors);
-	        var specs = get_piece_specs(profiles, color_ids);
+	        var piece_specs = get_piece_specs(profiles, color_ids);
 	        var partition_cells = create_supergrid();
 	        var board_cells = partition_cells.map(function (pc) {
-	            return board_cell(pc.id, nullVector(), mul(pc.pos, ref_dim + 900), mul(pc.dim, ref_dim + 900), false);
+	            return board_cell(pc.id, mul(pc.pos, ref_dim + 900), mul(pc.dim, ref_dim + 900), null, []);
 	        });
-	        fill_cells_with_restrictions(board_cells, specs, profiles);
-	        board_cells.forEach(function (bc) {
-	            return (bc.token_points = get_token_points(bc.dim, profiles.filter(function (p) { return bc.restrictions.profile_id(p.id); }), bc.orderly, bc.rotation));
-	        });
+	        fill_with_cell_specs(board_cells, piece_specs);
+	        board_cells.forEach(function (bc) { return (bc.token_points = get_token_points(bc.dim, bc.spec)); });
 	        board_cells.forEach(function (t) { return display_cell(p, t, bc); });
-	        var pieces = get_pieces(specs, board_cells);
+	        var pieces = get_pieces(board_cells);
 	        pieces.forEach(function (t) { return (t.shadow ? display_piece_shadow(p, t, bc) : {}); });
 	        pieces.forEach(function (t) { return display_piece(p, t, bc); });
 	    };

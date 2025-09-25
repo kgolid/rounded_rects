@@ -43,3 +43,8 @@ export function random_partition<T>(arr: T[], parts: number): T[][] {
 
   return partition;
 }
+
+export function get_alpha(i: number) {
+  let a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  return a.charAt(i);
+}
