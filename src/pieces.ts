@@ -70,7 +70,7 @@ export function get_piece_profiles(n: number): PieceProfile[] {
 function get_random_piece_profile(id: number): PieceProfile {
   let width = pickAny([40, 45, 50, 60, 120]);
   let length = pickAny([40, 45, 50, 60, 120]);
-  let height = 10 + Math.random() * 60;
+  let height = Math.max(10, pickAny([0.1, 0.2, 0.4, 0.6, 0.8, 1]) * Math.min(length, width)); //10 + Math.random() * 60;
 
   let dim = vec(length, width, height);
   let corner_radius = pickAny([0.05, 0.1, 0.2, 0.499]) * Math.min(length, width);
