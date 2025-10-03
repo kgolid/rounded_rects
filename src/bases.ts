@@ -6,15 +6,15 @@ export function get_base_change_function(scale: number, rotation: number, transl
 }
 
 export function get_flat_base_change_function(scale: number, rotation: number, translation: Vec = vec(0, 0, 0)) {
-  return (v: Vec) => vec(v.x + v.z, v.y + v.z);
+  return (v: Vec) => vec(v.x + v.z / 4, v.y + v.z / 4);
 }
 
 export function get_bases(scale: number, rotation: number): Vec[] {
   const rot = (rotation * Math.PI) / 12;
   const squish = 1; // 1 / Math.sqrt(2); //Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3);
 
-  const PHI1 = -(5 * Math.PI) / 6 + rot;
-  const PHI2 = -(1 * Math.PI) / 6 + rot;
+  const PHI1 = -(3 * Math.PI) / 4 + rot;
+  const PHI2 = -(1 * Math.PI) / 4 + rot;
   const PHI3 = -Math.PI / 2 + rot;
 
   const b1 = { x: Math.cos(PHI1), y: squish * Math.sin(PHI1), z: 0 };

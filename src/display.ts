@@ -2,11 +2,11 @@ import p5 from 'p5';
 import { BoardCell, Piece, Shape, Vec } from './interfaces';
 import { add, lerp, mul, nullVector, scale, shape, sub, vec } from './vector';
 import { illuminanceOfEdge, illuminanceOfShape } from './light';
-import { color_set } from './colors';
+import { bg_col, cell_stroke_col, color_set } from './colors';
 import { lch_scale } from './lch_scale';
 import { rounded_rect_points } from './shapes';
 import { get_sides, get_silhouette } from './blocks';
-import { get_alpha, random_int } from './util';
+import { get_alpha, pad_number, random_int } from './util';
 import { hatchParallelogram } from './hatch';
 
 //let sun = vec(-14000, -22000, 25000);
@@ -23,7 +23,7 @@ export function display_piece_shadow(p: p5, piece: Piece, bc: (_: Vec) => Vec) {
   let shadow_dir = vec(-height / 3, height / 2);
 
   let pnts = rounded_rect_points(pos, profile.dim, profile.corner_radius, 1, piece.rotation);
-  let s_pnts = pnts.map((t) => ({ ...t, z: -3 }));
+  let s_pnts = pnts.map((t) => ({ ...t, z: pos.z - 3 }));
   let shadow_silhouette = get_silhouette(s_pnts, shadow_dir, profile.tapering, pos);
 
   display_shadow(p, shadow_silhouette, 100, bc);
@@ -142,13 +142,18 @@ function draw_line(p: p5, l1: Vec, l2: Vec, bc: (pnt: Vec) => Vec) {
 export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
   let pad = nullVector(); //vec(8, 8);
   let dim = sub(cell.dim, pad);
-  let pos = add(cell.pos, mul(pad, 0.5));
-  let pnts = [pos, vec(pos.x, pos.y + dim.y), vec(pos.x + dim.x, pos.y + dim.y), vec(pos.x + dim.x, pos.y)];
+  let pos = add({ ...cell.pos, z: dim.z / 10 }, mul(pad, 0.5));
+  let pnts = [
+    pos,
+    vec(pos.x, pos.y + dim.y, pos.z),
+    vec(pos.x + dim.x, pos.y + dim.y, pos.z),
+    vec(pos.x + dim.x, pos.y, pos.z),
+  ];
 
-  p.noFill();
-
-  p.stroke('#9aa297');
+  p.stroke(cell_stroke_col);
   p.strokeWeight(2);
+
+  p.fill(bg_col);
 
   p.beginShape();
   for (let i = 0; i < pnts.length; i++) {
@@ -158,9 +163,11 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
   p.endShape(p.CLOSE);
 
   if (
+    cell.spec &&
     cell.spec.type == 'grid' &&
     cell.spec.grid_layout == 'space-between' &&
-    (cell.spec.grid_dim.x > 1 || cell.spec.grid_dim.y > 1)
+    (cell.spec.grid_dim.x > 1 || cell.spec.grid_dim.y > 1) &&
+    cell.token_points.length > 0
   ) {
     let gd = cell.spec.grid_dim;
 
@@ -181,7 +188,7 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
       let px = lerp(pnts[0], pnts[3], (i + 0.5) / gd.x);
       for (let j = 0; j < gd.y; j++) {
         let py = lerp(pnts[0], pnts[1], (j + 0.5) / gd.y);
-        let tpos = bc(add(vec(px.x, py.y), vec(0, 0)));
+        let tpos = bc(add(vec(px.x, py.y, px.z), vec(0, 0)));
 
         let alpha = get_alpha(gd.x - 1 - (i % 26));
         let coordinate_label = '' + num + '-' + alpha + '' + (j + 1);
@@ -197,13 +204,25 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
   if (cell.token_points.length == 0) {
     let s = shape(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
     p.strokeWeight(2);
-    hatchParallelogram(p, s, 6, Math.PI / 5);
+    hatchParallelogram(p, s, 6, Math.PI / 12);
+
+    if (cell.leave_empty) {
+      let tpos = bc(add(pnts[0], vec(10, 10)));
+      display_text(p, tpos, 'G-' + cell.id, 18, false);
+    } else {
+      let px = lerp(pnts[0], pnts[3], 0.5);
+      let py = lerp(pnts[0], pnts[1], 0.5);
+      let tpos = bc(add(vec(px.x, py.y, px.z), vec(0, 0)));
+      p.fill(bg_col);
+      p.ellipse(tpos.x, tpos.y, 50, 50);
+      display_text(p, tpos, pad_number(random_int(100), 2), 26, true);
+    }
 
     //p.line(bc(pnts[0]).x, bc(pnts[0]).y, bc(pnts[2]).x, bc(pnts[2]).y);
     //p.line(bc(pnts[1]).x, bc(pnts[1]).y, bc(pnts[3]).x, bc(pnts[3]).y);
   } else {
     let tpos = bc(add(pnts[0], vec(10, 10)));
-    let num = random_int(100);
+    let num = pad_number(random_int(100), 2);
     let label = 'C-' + cell.id + '-' + num;
     if (cell.spec.type == 'grid' && cell.spec.grid_layout == 'space-between') label = 'C-' + cell.id;
 
@@ -211,18 +230,18 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
   }
 }
 
-function display_text(p: p5, pos: Vec, text: string, size: number, centered: boolean) {
+function display_text(p: p5, pos: Vec, text: string, size: number, centered: boolean, invert: boolean = false) {
   p.push();
   p.noStroke();
   p.translate(pos.x, pos.y);
-  p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
-  p.rotate(-Math.PI / 4);
+  //p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
+  p.rotate(-Math.PI / 4 + Math.PI / 6);
   p.textSize(size);
   if (centered) p.textAlign(p.CENTER, p.CENTER);
   p.textStyle(p.BOLD);
-  p.fill('#9aa297');
-  p.stroke('#c9cdc1');
-  p.strokeWeight(4);
+  p.fill(invert ? bg_col : cell_stroke_col);
+  p.stroke(invert ? cell_stroke_col : bg_col);
+  p.strokeWeight(10);
   p.text(text, 0, 0);
   p.noStroke();
   p.text(text, 0, 0);

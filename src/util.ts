@@ -48,3 +48,12 @@ export function get_alpha(i: number) {
   let a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   return a.charAt(i);
 }
+
+export function pad_number(n: number, l: number) {
+  let ns: string = '' + n;
+  let zeroes = l - ns.length;
+
+  if (zeroes <= 0) return ns;
+
+  return [...new Array(zeroes)].map((_) => '0').join('') + ns;
+}

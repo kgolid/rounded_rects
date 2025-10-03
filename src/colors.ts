@@ -1,40 +1,8 @@
 import { palettes } from './color_catalogue';
 
-export const color_set1 = [
-  { c: ['#874644', '#de99bd', '#fbeddc'], s: '#874644' },
-  { c: ['#63c1d9', '#b6ecdf', '#ffefb9'], s: '#63c1d9' },
-  { c: ['#4aafd9', '#73c7dc', '#b6ebde'], s: '#4aafd9' },
-  { c: ['#a8335e', '#e651a4', '#fea9c5'], s: '#a8335e' },
-  { c: ['#b82d3c', '#f24363', '#fec287'], s: '#b82d3c' },
-  { c: ['#673fa0', '#bb8ed6', '#ff9991'], s: '#673fa0' },
-  { c: ['#780600', '#d81300', '#f65414'], s: '#780600' },
-  { c: ['#3b4052', '#189cb2', '#65c5d4'], s: '#3b4052' },
-];
-
-export const color_set2 = [
-  { c: ['#c98a70', '#e7ded5', '#ffffd9'], s: '#c98a70' },
-  { c: ['#ca456b', '#f19797', '#ffc7b3'], s: '#ca456b' },
-  { c: ['#df5905', '#f9b73e', '#ffed62'], s: '#df5905' },
-  { c: ['#c50040', '#ee5151', '#ff946c'], s: '#c50040' },
-  //{ c: ['#d50028', '#fb671f', '#ffaa44'], s: '#d50028' },
-  //{ c: ['#008c4c', '#6bbe3a', '#aff55d'], s: '#008c4c' },
-  { c: ['#0049a4', '#0c75b7', '#00c3fd'], s: '#0049a4' },
-  //{ c: ['#007150', '#0b9e4e', '#72dc6e'], s: '#007150' },
-  //{ c: ['#5c0058', '#763f68', '#df7395'], s: '#5c0058' },
-];
-
-export const color_set4 = [
-  { c: ['#564771', '#77517e', '#ba5e93'], s: '#564771' },
-  { c: ['#765f6f', '#738973', '#8eba74'], s: '#765f6f' },
-  { c: ['#b66d87', '#efd5bc', '#f4f4f4'], s: '#b66d87' },
-  { c: ['#dd4b82', '#df7c92', '#e7b699'], s: '#dd4b82' },
-  { c: ['#e63c50', '#ea931d', '#ead48e'], s: '#e63c50' },
-];
-
-export const color_set5 = [
-  { c: ['#3b373d', '#f4a1ab', '#edf0e2'], s: '#f4a1ab' },
-  { c: ['#3b373d', '#28664c', '#35a857', '#aad063'], s: '#3b373d' },
-];
 // 11
 // 18
-export const color_set = palettes[11].color_sets;
+export const color_set = palettes[5].color_sets;
+
+export const bg_col = '#ece9dd'; //'#c9cdc1';
+export const cell_stroke_col = '#8fc5d6ff'; //'#9aa297';

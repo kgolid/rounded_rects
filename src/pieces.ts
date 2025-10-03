@@ -23,7 +23,7 @@ export function get_pieces(cells: BoardCell[]) {
       pieces.push({ spec, rotation, pos: add(tp, c.pos), shadow: true });
     });
 
-    if (c.token_points.length == 0 && c.dim.x < 300 && c.dim.y < 300 && c.id % 4 == 3) {
+    if (c.token_points.length == 0 && c.dim.x < 300 && c.dim.y < 300 && c.id % 4 == 3 && !c.leave_empty) {
       let dim = vec(c.dim.x - 25, c.dim.y - 25, 8);
       let col = suitable_piece_specs[0].color_id;
       let spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } };

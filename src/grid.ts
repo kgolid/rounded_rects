@@ -1,5 +1,5 @@
 import { PIECE_MARGIN } from './globals';
-import { BoardCell, BoardCellSpec, GridCellSpec, PieceSpec, ScatterCellSpec, Vec } from './interfaces';
+import { BoardCell, BoardCellSpec, EmptyCellSpec, GridCellSpec, PieceSpec, ScatterCellSpec, Vec } from './interfaces';
 import { decide_cell_wide_rotation } from './restrictions';
 import { my_shuffle, pickAny } from './util';
 import { mag, mul, sub, vec } from './vector';
@@ -10,7 +10,7 @@ export function fill_with_cell_specs(cells: BoardCell[], piece_specs: PieceSpec[
 
   let spec_map = new Map<number, BoardCellSpec>();
   ids.forEach((id) => spec_map.set(id, get_cell_spec(cells.find((c) => c.id == id).dim, piece_specs)));
-  cells.forEach((c) => (c.spec = spec_map.get(c.id)));
+  cells.forEach((c) => (c.spec = c.leave_empty ? get_empty_cell_spec() : spec_map.get(c.id)));
 }
 
 export function get_cell_spec(dim: Vec, piece_specs: PieceSpec[]): BoardCellSpec {
@@ -29,6 +29,11 @@ export function get_cell_spec(dim: Vec, piece_specs: PieceSpec[]): BoardCellSpec
   if (cell_type == 'grid') {
     return get_grid_cell_spec(dim, allowed_piece_specs);
   }
+}
+
+function get_empty_cell_spec(): EmptyCellSpec {
+  console.log('empty cell spec');
+  return { type: 'empty', allowed_piece_specs: [], rotation: 0 };
 }
 
 function get_scatter_cell_spec(allowed_piece_specs: PieceSpec[]): ScatterCellSpec {
@@ -54,8 +59,9 @@ function get_grid_cell_spec(dim: Vec, allowed_piece_specs: PieceSpec[]): GridCel
 }
 
 export function get_token_points(cell_dim: Vec, cell_spec: BoardCellSpec): Vec[] {
+  if (cell_spec.type == 'single' || cell_spec.type == 'empty') return [];
+
   let piece_profile = cell_spec.allowed_piece_specs[0].profile;
-  if (cell_spec.type == 'single') return [];
   if (cell_spec.type == 'grid')
     return cell_spec.grid_layout == 'space-around'
       ? get_orderly_token_points(cell_dim, cell_spec, piece_profile.dim)
@@ -88,7 +94,7 @@ function get_scattered_token_points(cell_dim: Vec, token_dim: Vec): Vec[] {
     tries: 100,
   });
 
-  let points = sampling.fill().map((d: number[]) => vec(d[0] + pad, d[1] + pad, 0));
+  let points = sampling.fill().map((d: number[]) => vec(d[0] + pad, d[1] + pad, cell_dim.z / 10));
   points.sort((a, b) => mag(sub(a, mul(cell_dim, 0.5))) - mag(sub(b, mul(cell_dim, 0.5))));
   return points;
 }
@@ -107,7 +113,7 @@ function get_orderly_token_points(cell_dim: Vec, cell_spec: GridCellSpec, token_
     for (let j = 0; j < y; j++) {
       let px = pad + rest_x / 2 + (i + 0.5) * (dim.x + pad);
       let py = pad + rest_y / 2 + (y - j - 0.5) * (dim.y + pad);
-      points.push(vec(px, py));
+      points.push(vec(px, py, cell_dim.z / 10));
     }
   }
 
@@ -134,7 +140,7 @@ function get_orderly_token_points2(cell_dim: Vec, cell_spec: GridCellSpec, token
     for (let j = 0; j < y; j++) {
       let px = (i + 0.5) * (dim.x + pad + inner_pad_x);
       let py = (y - j - 0.5) * (dim.y + pad + inner_pad_y);
-      points.push(vec(px, py));
+      points.push(vec(px, py, cell_dim.z / 10));
     }
   }
 
@@ -147,6 +153,13 @@ function get_orderly_token_points2(cell_dim: Vec, cell_spec: GridCellSpec, token
 
 // --- Constructors ---
 
-export function board_cell(id: number, pos: Vec, dim: Vec, spec: BoardCellSpec, token_points: Vec[] = []): BoardCell {
-  return { id, pos, dim, spec, token_points };
+export function board_cell(
+  id: number,
+  pos: Vec,
+  dim: Vec,
+  leave_empty: boolean,
+  spec: BoardCellSpec,
+  token_points: Vec[] = []
+): BoardCell {
+  return { id, pos, dim, spec, token_points, leave_empty };
 }

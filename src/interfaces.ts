@@ -12,7 +12,9 @@ export type PartitionCell = {
   pos: Vec;
   dim: Vec;
   depth: number;
+  reflected: boolean;
   terminal: boolean;
+  leave_empty: boolean;
 };
 
 export type BoardCell = {
@@ -20,19 +22,21 @@ export type BoardCell = {
   pos: Vec;
   dim: Vec; // TODO: generalize to bounding box?
   token_points: Vec[];
-  //restrictions: RestrictionMap;
-  //rotation: number;
-  //orderly: boolean;
+  leave_empty: boolean;
 
   spec: BoardCellSpec;
 };
 
-export type BoardCellSpec = ScatterCellSpec | GridCellSpec | SingleCellSpec;
+export type BoardCellSpec = EmptyCellSpec | ScatterCellSpec | GridCellSpec | SingleCellSpec;
 
 export type BaseCellSpec = {
   type: string;
   allowed_piece_specs: PieceSpec[];
   rotation: number;
+};
+
+export type EmptyCellSpec = BaseCellSpec & {
+  type: 'empty';
 };
 
 export type SingleCellSpec = BaseCellSpec & {
