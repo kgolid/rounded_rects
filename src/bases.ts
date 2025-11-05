@@ -1,17 +1,18 @@
+import { BASIS_ROTATION, BASIS_SQUISH } from './globals';
 import { Vec } from './interfaces';
 import { add, mul, translateWithBase, vec } from './vector';
 
-export function get_base_change_function(scale: number, rotation: number, translation: Vec = vec(0, 0, 0)) {
-  return (pnt: Vec) => translateWithBase(add(pnt, translation), get_bases(scale, rotation));
+export function get_base_change_function(scale: number, translation: Vec = vec(0, 0, 0)) {
+  return (pnt: Vec) => translateWithBase(add(pnt, translation), get_bases(scale));
 }
 
-export function get_flat_base_change_function(scale: number, rotation: number, translation: Vec = vec(0, 0, 0)) {
+export function get_flat_base_change_function() {
   return (v: Vec) => vec(v.x + v.z / 4, v.y + v.z / 4);
 }
 
-export function get_bases(scale: number, rotation: number): Vec[] {
-  const rot = (rotation * Math.PI) / 12;
-  const squish = 1; // 1 / Math.sqrt(2); //Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3);
+export function get_bases(scale: number): Vec[] {
+  const rot = (BASIS_ROTATION * Math.PI) / 12;
+  const squish = BASIS_SQUISH; //Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3);
 
   const PHI1 = -(3 * Math.PI) / 4 + rot;
   const PHI2 = -(1 * Math.PI) / 4 + rot;
@@ -24,9 +25,9 @@ export function get_bases(scale: number, rotation: number): Vec[] {
   return [b1, b2, b3].map((b) => mul(b, scale));
 }
 
-export function get_shadow_bases(scale: number, rotation: number): Vec[] {
-  const rot = (rotation * Math.PI) / 12;
-  const squish = 1 / Math.sqrt(2); //Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3);
+export function get_shadow_bases(scale: number): Vec[] {
+  const rot = (BASIS_ROTATION * Math.PI) / 12;
+  const squish = BASIS_SQUISH; //Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3);
 
   const PHI1 = -(5 * Math.PI) / 6 + rot;
   const PHI2 = -(1 * Math.PI) / 6 + rot;

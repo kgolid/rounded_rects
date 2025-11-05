@@ -1,10 +1,10 @@
-import { Shape, Vec } from './interfaces';
+import { Quad, Shape, Vec } from './interfaces';
 
 export function vec(x: number, y: number, z: number = 0): Vec {
   return { x, y, z };
 }
 
-export function shape(a: Vec, b: Vec, c: Vec, d: Vec): Shape {
+export function quad(a: Vec, b: Vec, c: Vec, d: Vec): Quad {
   return { a, b, c, d };
 }
 
@@ -24,6 +24,10 @@ export function sub(a: Vec, b: Vec): Vec {
   return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
 }
 
+export function vmul(a: Vec, b: Vec): Vec {
+  return { x: a.x * b.x, y: a.y * b.y, z: a.z * b.z };
+}
+
 export function mul(a: Vec, s: number): Vec {
   return { x: a.x * s, y: a.y * s, z: a.z * s };
 }
@@ -41,6 +45,10 @@ export function crossProduct(a: Vec, b: Vec): Vec {
 
 export function mag(a: Vec): number {
   return Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
+export function dist(a: Vec, b: Vec): number {
+  return mag(sub(a, b));
 }
 
 export function normalize(a: Vec): Vec {
@@ -69,6 +77,22 @@ export function lerp(a: Vec, b: Vec, r: number): Vec {
   return add(a, mul(sub(b, a), r));
 }
 
+export function points_along_line(l0: Vec, l1: Vec, distance: number): Vec[] {
+  let line_length = dist(l0, l1);
+  let number_of_points = Math.ceil(line_length / distance);
+
+  return [...new Array(number_of_points)].map((_, i) => lerp(l0, l1, i / number_of_points));
+}
+
+export function rotate_quad(q: Quad, pivot: Vec, phi: number) {
+  let ra = rotate_around(q.a, pivot, phi);
+  let rb = rotate_around(q.b, pivot, phi);
+  let rc = rotate_around(q.c, pivot, phi);
+  let rd = rotate_around(q.d, pivot, phi);
+
+  return quad(ra, rb, rc, rd);
+}
+
 export function rotate_around(p1: Vec, pivot: Vec, phi: number): Vec {
   const dx = p1.x - pivot.x;
   const dy = p1.y - pivot.y;
@@ -91,7 +115,7 @@ export function scale(p1: Vec, p2: Vec, mag: number): Vec {
   };
 }
 
-export function normal_of_shape(q: Shape): Vec {
+export function normal_of_quad(q: Quad): Vec {
   const xvec = sub(q.b, q.a);
   const yvec = sub(q.d, q.a);
   return crossProduct(xvec, yvec);

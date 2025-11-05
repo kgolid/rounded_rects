@@ -44,6 +44,12 @@ export function random_partition<T>(arr: T[], parts: number): T[][] {
   return partition;
 }
 
+export function random_subset<T>(arr: T[]): T[] {
+  let pick = 1 + random_int(2 ** arr.length - 1);
+  let selector = pick.toString(2).padStart(arr.length, '0');
+  return arr.filter((_, i) => selector.charAt(i) == '1');
+}
+
 export function get_alpha(i: number) {
   let a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   return a.charAt(i);

@@ -1,5 +1,5 @@
 import p5 from 'p5';
-import { Shape, Vec } from './interfaces';
+import { Quad, Shape, Vec } from './interfaces';
 import { vec } from './vector';
 
 export function hatchRect(
@@ -40,10 +40,10 @@ export function hatchRect(
   ctx.restore();
 }
 
-export function hatchParallelogram(p: p5, s: Shape, spacing: number, angle: number, offset = 0) {
+export function hatchParallelogram(p: p5, q: Quad, spacing: number, angle: number, offset = 0) {
   if (spacing <= 0) return;
 
-  const pts = [s.a, s.b, s.c, s.d];
+  const pts = [q.a, q.b, q.c, q.d];
   const ctx = p.drawingContext;
 
   // Polygon clip to the parallelogram
@@ -55,8 +55,8 @@ export function hatchParallelogram(p: p5, s: Shape, spacing: number, angle: numb
   ctx.clip();
 
   // Centroid (average of vertices is fine for a parallelogram)
-  const cx = (s.a.x + s.b.x + s.c.x + s.d.x) / 4;
-  const cy = (s.a.y + s.b.y + s.c.y + s.d.y) / 4;
+  const cx = (q.a.x + q.b.x + q.c.x + q.d.x) / 4;
+  const cy = (q.a.y + q.b.y + q.c.y + q.d.y) / 4;
 
   // Work in a rotated frame where our hatch lines are vertical.
   p.push();

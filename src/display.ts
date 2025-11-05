@@ -1,16 +1,18 @@
 import p5 from 'p5';
-import { BoardCell, Piece, Shape, Vec } from './interfaces';
-import { add, lerp, mul, nullVector, scale, shape, sub, vec } from './vector';
-import { illuminanceOfEdge, illuminanceOfShape } from './light';
+import { BoardCell, Piece, Quad, Vec } from './interfaces';
+import { add, lerp, mul, nullVector, quad, scale, sub, vec } from './vector';
+import { illuminanceOfEdge, illuminanceOfQuad } from './light';
 import { bg_col, cell_stroke_col, color_set } from './colors';
 import { lch_scale } from './lch_scale';
-import { rounded_rect_points } from './shapes';
+import { circle_points, rounded_rect_points } from './shapes';
 import { get_sides, get_silhouette } from './blocks';
 import { get_alpha, pad_number, random_int } from './util';
 import { hatchParallelogram } from './hatch';
+import { BASIS_ROTATION, BASIS_SQUISH } from './globals';
 
 //let sun = vec(-14000, -22000, 25000);
-let sun = vec(-4000, -6000, 6500);
+//let sun = vec(-4000, -6000, 6500);
+let sun = vec(-2100, -3300, 3750);
 //let sun = vec(-1400, -2200, 2500);
 
 export function display_piece_shadow(p: p5, piece: Piece, bc: (_: Vec) => Vec) {
@@ -73,7 +75,7 @@ export function display_pnts(
 }
 
 function get_illum(pnts: Vec[]) {
-  let shape: Shape =
+  let q: Quad =
     pnts.length > 4
       ? {
           d: pnts[Math.floor(pnts.length * 0.875)],
@@ -83,7 +85,7 @@ function get_illum(pnts: Vec[]) {
         }
       : { a: pnts[3], b: pnts[2], c: pnts[1], d: pnts[0] };
 
-  return illuminanceOfShape(sun, shape);
+  return illuminanceOfQuad(sun, q);
 }
 
 export function display_backdrop(p: p5, pnts: Vec[], color_id: number, bc: (_: Vec) => Vec) {
@@ -102,13 +104,13 @@ export function display_backdrop(p: p5, pnts: Vec[], color_id: number, bc: (_: V
 }
 
 export function display_face_edge(p: p5, pnts: Vec[], color_id: number, bc: (_: Vec) => Vec) {
-  const flat_quad = shape(vec(100, 0, 0), vec(0, 100, 0), vec(-100, 0, 0), vec(0, -100, 0));
+  const flat_quad = quad(vec(100, 0, 0), vec(0, 100, 0), vec(-100, 0, 0), vec(0, -100, 0));
 
   for (let i = 0; i < pnts.length - 1; i++) {
     let l1 = pnts[i];
     let l2 = pnts[i + 1];
     if (l1.x - l1.y > l2.x - l2.y) continue;
-    let c1 = shape(l1, l2, add(l2, vec(0, 0, 10)), add(l1, vec(0, 0, 10)));
+    let c1 = quad(l1, l2, add(l2, vec(0, 0, 10)), add(l1, vec(0, 0, 10)));
 
     const colorset = color_set[color_id];
 
@@ -124,6 +126,7 @@ export function display_face_edge(p: p5, pnts: Vec[], color_id: number, bc: (_: 
 
 export function display_shadow(p: p5, pnts: Vec[], opacity: number, bc: (_: Vec) => Vec) {
   p.fill(0, opacity);
+  p.fill(cell_stroke_col);
   p.noStroke();
   p.beginShape();
   for (let i = 0; i < pnts.length; i++) {
@@ -201,21 +204,32 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
     }
   }
 
-  if (cell.token_points.length == 0) {
-    let s = shape(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
+  if (cell.spec.type == 'empty') {
+    let s = quad(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
     p.strokeWeight(2);
-    hatchParallelogram(p, s, 6, Math.PI / 12);
+    hatchParallelogram(p, s, 6, BASIS_ROTATION * (Math.PI / 12));
 
     if (cell.leave_empty) {
-      let tpos = bc(add(pnts[0], vec(10, 10)));
-      display_text(p, tpos, 'G-' + cell.id, 18, false);
-    } else {
+      let tpos = add(pnts[0], vec(10, 10));
+      display_text(p, bc(tpos), 'G-' + cell.id, 18, false);
+    } else if (cell.spec.show_index) {
       let px = lerp(pnts[0], pnts[3], 0.5);
       let py = lerp(pnts[0], pnts[1], 0.5);
-      let tpos = bc(add(vec(px.x, py.y, px.z), vec(0, 0)));
+      let tpos = add(vec(px.x, py.y, px.z), vec(0, 0));
       p.fill(bg_col);
-      p.ellipse(tpos.x, tpos.y, 50, 50);
-      display_text(p, tpos, pad_number(random_int(100), 2), 26, true);
+
+      let circle_pnts = circle_points(tpos, 25, 2);
+
+      p.beginShape();
+      for (let i = 0; i < circle_pnts.length; i++) {
+        let pnt = bc(circle_pnts[i]);
+        p.vertex(pnt.x, pnt.y);
+      }
+      p.endShape(p.CLOSE);
+
+      //p.ellipse(tpos.x, tpos.y, 50, 50);
+
+      display_text(p, bc(tpos), pad_number(random_int(100), 2), 26, true);
     }
 
     //p.line(bc(pnts[0]).x, bc(pnts[0]).y, bc(pnts[2]).x, bc(pnts[2]).y);
@@ -234,8 +248,8 @@ function display_text(p: p5, pos: Vec, text: string, size: number, centered: boo
   p.push();
   p.noStroke();
   p.translate(pos.x, pos.y);
-  //p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
-  p.rotate(-Math.PI / 4 + Math.PI / 6);
+  p.scale(1, BASIS_SQUISH); //p.scale(1, Math.cos(Math.PI / 3) / Math.sin(Math.PI / 3));
+  p.rotate(-Math.PI / 4 + BASIS_ROTATION * (Math.PI / 12));
   p.textSize(size);
   if (centered) p.textAlign(p.CENTER, p.CENTER);
   p.textStyle(p.BOLD);

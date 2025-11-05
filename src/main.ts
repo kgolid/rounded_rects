@@ -17,12 +17,12 @@ let sketch = function (p: P5) {
     p.strokeJoin(p.ROUND);
     p.translate(p.width / 2, p.height / 2);
 
-    let bc = get_base_change_function(1, 2);
+    let bc = get_base_change_function(1);
 
     p.strokeWeight(1);
 
     const number_of_profiles = 5;
-    const number_of_colors = 4;
+    const number_of_colors = 5;
 
     const ref_dim = Math.max(p.width, p.height);
 
@@ -32,11 +32,9 @@ let sketch = function (p: P5) {
 
     let partition_cells = create_supergrid();
     let board_cells = partition_cells.map((pc) =>
-      //board_cell(pc.id, mul(pc.pos, p.width - 100), mul(pc.dim, p.width - 100), null, [])
-      board_cell(pc.id, mul(pc.pos, ref_dim * 1.5), mul(pc.dim, ref_dim * 1.5), pc.leave_empty, null)
+      //board_cell(pc.id, mul(pc.pos, p.width - 100), mul(pc.dim, p.width - 100), pc.leave_empty, null, [])
+      board_cell(pc.id, mul(pc.pos, ref_dim * 1.6), mul(pc.dim, ref_dim * 1.6), pc.leave_empty, null)
     );
-
-    console.log(partition_cells);
 
     fill_with_cell_specs(board_cells, piece_specs);
 

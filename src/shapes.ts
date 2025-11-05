@@ -1,5 +1,5 @@
 import { Vec } from './interfaces';
-import { lerp, rotate_around, vec } from './vector';
+import { add, lerp, rotate_around, vec } from './vector';
 
 export function rounded_rect_points(
   pos: Vec,
@@ -55,17 +55,24 @@ export function rounded_rect_points(
   return points.map((t) => rotate_around(t, pos, rotation));
 }
 
+export function circle_points(pos: Vec, radius: number, point_distance: number) {
+  let circumference = radius * Math.PI * 2;
+  let number_of_points = Math.floor(circumference / point_distance);
+
+  return [...new Array(number_of_points)].map((_, i) => point_on_circle(i / number_of_points, radius, pos));
+}
+
 export function points_on_line(from: Vec, to: Vec, number_of_points: number) {
   return [...new Array(number_of_points)].map((_, i) => lerp(from, to, i / number_of_points));
 }
 
 export function quarter_circle_points(radius: number, center_point: Vec, quartile: number, number_of_points: number) {
   return [...new Array(number_of_points)].map((_, i) =>
-    point_on_circle_from_index(i, radius, center_point, quartile, number_of_points)
+    point_on_circle_from_quartile_and_index(i, radius, center_point, quartile, number_of_points)
   );
 }
 
-function point_on_circle_from_index(
+function point_on_circle_from_quartile_and_index(
   index: number,
   radius: number,
   center_point: Vec,
@@ -75,6 +82,11 @@ function point_on_circle_from_index(
   let ratio = index / number_of_points;
   let radian = (ratio + quartile) * (Math.PI / 2);
 
+  return vec(Math.cos(radian) * radius + center_point.x, Math.sin(radian) * radius + center_point.y);
+}
+
+function point_on_circle(ratio: number, radius: number, center_point: Vec) {
+  let radian = ratio * Math.PI * 2;
   return vec(Math.cos(radian) * radius + center_point.x, Math.sin(radian) * radius + center_point.y);
 }
 

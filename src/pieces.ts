@@ -6,7 +6,7 @@ import { add, vec } from './vector';
 export function get_pieces(cells: BoardCell[]) {
   let pieces: Piece[] = [];
   cells.forEach((c) => {
-    let prob = 0.2 + Math.random();
+    let prob = 0.25 + Math.random();
     let number_of_pieces = Math.round(c.token_points.length * prob);
 
     if (c.spec.type == 'grid' && c.spec.grid_layout == 'space-between' && c.spec.piece_distribution == 'single')
@@ -16,18 +16,17 @@ export function get_pieces(cells: BoardCell[]) {
     let suitable_piece_specs = c.spec.allowed_piece_specs;
 
     token_points.forEach((tp) => {
-      let spec = pickAny(suitable_piece_specs);
+      let spec = c.spec.type == 'scatter' ? tp.spec : pickAny(suitable_piece_specs);
+      let rotation = c.spec.type == 'scatter' ? tp.rotation : c.spec.rotation + (Math.random() - 0.5) * Math.PI * 0.04;
 
-      let rotation_variance = c.spec.type == 'grid' ? 0.04 : 0.2;
-      let rotation = c.spec.rotation + (Math.random() - 0.5) * Math.PI * rotation_variance;
-      pieces.push({ spec, rotation, pos: add(tp, c.pos), shadow: true });
+      pieces.push({ spec, rotation, pos: add(tp.pos, c.pos), shadow: true });
     });
 
-    if (c.token_points.length == 0 && c.dim.x < 300 && c.dim.y < 300 && c.id % 4 == 3 && !c.leave_empty) {
+    if (c.spec.type == 'empty' && c.spec.has_stack && !c.leave_empty) {
       let dim = vec(c.dim.x - 25, c.dim.y - 25, 8);
-      let col = suitable_piece_specs[0].color_id;
+      let col = c.spec.color_id;
       let spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } };
-      let stack_height = 1 + random_int(4);
+      let stack_height = random_int(4);
 
       for (let i = 0; i < stack_height; i++) {
         pieces.push({
@@ -72,18 +71,18 @@ export function get_piece_profiles(n: number): PieceProfile[] {
 }
 
 function get_random_piece_profile(id: number): PieceProfile {
-  let width = pickAny([40, 45, 50, 60, 120]);
-  let length = pickAny([40, 45, 50, 60, 120]);
-  let height = Math.max(10, pickAny([0.1, 0.2, 0.4, 0.6, 0.8, 1]) * Math.min(length, width)); //10 + Math.random() * 60;
+  let width = pickAny([40, 50, 60, 80, 120]);
+  let length = pickAny([40, 50, 60, 80, 120]);
+  let height = Math.min(80, Math.max(15, pickAny([0.1, 0.2, 0.4, 0.6, 0.8, 1]) * Math.min(length, width))); //10 + Math.random() * 60;
 
   let dim = vec(length, width, height);
-  let corner_radius = pickAny([0.05, 0.1, 0.2, 0.499]) * Math.min(length, width);
-  let tapering = height < 30 ? 1 : pickAny([0.75, 0.9, 1, 1]);
+  let corner_radius = pickAny([0.1, 0.2, 0.499]) * Math.min(length, width);
+  let tapering = height < 30 ? 1 : pickAny([0.8, 0.9, 1, 1]);
 
   return { id, dim, corner_radius, tapering };
 }
 
 export function get_piece_color_ids(n: number): number[] {
-  let colors = my_shuffle([...new Array(color_set.length)].map((_, i) => i));
-  return colors.slice(0, n);
+  let colors = my_shuffle([...new Array(n)].map((_, i) => i % color_set.length));
+  return colors;
 }

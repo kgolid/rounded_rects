@@ -4,11 +4,12 @@ import { my_shuffle, random_int } from './util';
 import { add, nullVector, sub, vec } from './vector';
 
 const min_dim = 0.08;
-const slice_chance = 0.3;
+const slice_chance = 0.4;
 const PAD_RATIO = 0.0001; //0.008;
 const terminal_chance: (d: number) => number = (d) => (d - 4) / 20;
 
 export function create_supergrid() {
+  // let grid: PartitionCell[] = [cell(vec(-0.32, -0.22), vec(0.64, 0.44, 0), 0, false)];
   let grid: PartitionCell[] = [cell(vec(-0.5, -0.5), vec(1, 1, 0), 0, false)];
 
   let splitted = divide_cells_repeatedly(grid, 0);
@@ -86,8 +87,8 @@ function pad_cell(c: PartitionCell, pad: number): PartitionCell[] {
 }
 
 function slice_cell(c: PartitionCell, pad: number): PartitionCell[] {
-  let max_x_cells = Math.min(5, Math.floor(c.dim.x / min_dim));
-  let max_y_cells = Math.min(5, Math.floor(c.dim.y / min_dim));
+  let max_x_cells = 1 + Math.min(5, Math.floor(c.dim.x / min_dim));
+  let max_y_cells = 1 + Math.min(5, Math.floor(c.dim.y / min_dim));
 
   let x_cells = 1 + random_int(max_x_cells);
   let y_cells = 1 + random_int(max_y_cells);

@@ -30,80 +30,6 @@
 
 	var P5 = /*@__PURE__*/getDefaultExportFromCjs(p5_min);
 
-	function vec(x, y, z) {
-	    if (z === void 0) { z = 0; }
-	    return { x: x, y: y, z: z };
-	}
-	function shape(a, b, c, d) {
-	    return { a: a, b: b, c: c, d: d };
-	}
-	function nullVector() {
-	    return vec(0, 0);
-	}
-	function add(a, b) {
-	    return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
-	}
-	function sub(a, b) {
-	    return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
-	}
-	function mul(a, s) {
-	    return { x: a.x * s, y: a.y * s, z: a.z * s };
-	}
-	function dotProduct(a, b) {
-	    return a.x * b.x + a.y * b.y + a.z * b.z;
-	}
-	function crossProduct(a, b) {
-	    var cx = a.y * b.z - a.z * b.y;
-	    var cy = a.z * b.x - a.x * b.z;
-	    var cz = a.x * b.y - a.y * b.x;
-	    return { x: cx, y: cy, z: cz };
-	}
-	function mag(a) {
-	    return Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
-	}
-	function normalize(a) {
-	    return mul(a, 1 / mag(a));
-	}
-	function angleBetween(a, b) {
-	    return Math.acos(dotProduct(a, b) / (mag(a) * mag(b)));
-	}
-	function angle_of_direction(p1, p2) {
-	    return Math.atan2(p2.y - p1.y, p2.x - p1.x);
-	}
-	function midpoint(a, b) {
-	    return add(a, mul(sub(b, a), 0.5));
-	}
-	function translateWithBase(pnt, bases) {
-	    var b1 = bases[0], b2 = bases[1], b3 = bases[2];
-	    return add(mul(b1, pnt.x), add(mul(b2, pnt.y), mul(b3, pnt.z)));
-	}
-	function lerp$1(a, b, r) {
-	    return add(a, mul(sub(b, a), r));
-	}
-	function rotate_around(p1, pivot, phi) {
-	    var dx = p1.x - pivot.x;
-	    var dy = p1.y - pivot.y;
-	    var cosPhi = Math.cos(phi);
-	    var sinPhi = Math.sin(phi);
-	    return {
-	        x: cosPhi * dx - sinPhi * dy + pivot.x,
-	        y: sinPhi * dx + cosPhi * dy + pivot.y,
-	        z: p1.z
-	    };
-	}
-	function scale(p1, p2, mag) {
-	    return {
-	        x: p2.x + (p1.x - p2.x) * mag,
-	        y: p2.y + (p1.y - p2.y) * mag,
-	        z: p1.z
-	    };
-	}
-	function normal_of_shape(q) {
-	    var xvec = sub(q.b, q.a);
-	    var yvec = sub(q.d, q.a);
-	    return crossProduct(xvec, yvec);
-	}
-
 	/******************************************************************************
 	Copyright (c) Microsoft Corporation.
 
@@ -145,31 +71,123 @@
 	    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 	};
 
-	function angleBetweenPointAndShape(pnt, shape) {
-	    var planeCenter = centerOfShape(shape);
-	    var planeNormal = normalOfShape(shape);
+	function vec(x, y, z) {
+	    if (z === void 0) { z = 0; }
+	    return { x: x, y: y, z: z };
+	}
+	function quad(a, b, c, d) {
+	    return { a: a, b: b, c: c, d: d };
+	}
+	function nullVector() {
+	    return vec(0, 0);
+	}
+	function add(a, b) {
+	    return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
+	}
+	function sub(a, b) {
+	    return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+	}
+	function vmul(a, b) {
+	    return { x: a.x * b.x, y: a.y * b.y, z: a.z * b.z };
+	}
+	function mul(a, s) {
+	    return { x: a.x * s, y: a.y * s, z: a.z * s };
+	}
+	function dotProduct(a, b) {
+	    return a.x * b.x + a.y * b.y + a.z * b.z;
+	}
+	function crossProduct(a, b) {
+	    var cx = a.y * b.z - a.z * b.y;
+	    var cy = a.z * b.x - a.x * b.z;
+	    var cz = a.x * b.y - a.y * b.x;
+	    return { x: cx, y: cy, z: cz };
+	}
+	function mag(a) {
+	    return Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+	}
+	function dist(a, b) {
+	    return mag(sub(a, b));
+	}
+	function normalize(a) {
+	    return mul(a, 1 / mag(a));
+	}
+	function angleBetween(a, b) {
+	    return Math.acos(dotProduct(a, b) / (mag(a) * mag(b)));
+	}
+	function angle_of_direction(p1, p2) {
+	    return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+	}
+	function midpoint(a, b) {
+	    return add(a, mul(sub(b, a), 0.5));
+	}
+	function translateWithBase(pnt, bases) {
+	    var b1 = bases[0], b2 = bases[1], b3 = bases[2];
+	    return add(mul(b1, pnt.x), add(mul(b2, pnt.y), mul(b3, pnt.z)));
+	}
+	function lerp$1(a, b, r) {
+	    return add(a, mul(sub(b, a), r));
+	}
+	function points_along_line(l0, l1, distance) {
+	    var line_length = dist(l0, l1);
+	    var number_of_points = Math.ceil(line_length / distance);
+	    return __spreadArray([], new Array(number_of_points), true).map(function (_, i) { return lerp$1(l0, l1, i / number_of_points); });
+	}
+	function rotate_quad(q, pivot, phi) {
+	    var ra = rotate_around(q.a, pivot, phi);
+	    var rb = rotate_around(q.b, pivot, phi);
+	    var rc = rotate_around(q.c, pivot, phi);
+	    var rd = rotate_around(q.d, pivot, phi);
+	    return quad(ra, rb, rc, rd);
+	}
+	function rotate_around(p1, pivot, phi) {
+	    var dx = p1.x - pivot.x;
+	    var dy = p1.y - pivot.y;
+	    var cosPhi = Math.cos(phi);
+	    var sinPhi = Math.sin(phi);
+	    return {
+	        x: cosPhi * dx - sinPhi * dy + pivot.x,
+	        y: sinPhi * dx + cosPhi * dy + pivot.y,
+	        z: p1.z
+	    };
+	}
+	function scale(p1, p2, mag) {
+	    return {
+	        x: p2.x + (p1.x - p2.x) * mag,
+	        y: p2.y + (p1.y - p2.y) * mag,
+	        z: p1.z
+	    };
+	}
+	function normal_of_quad(q) {
+	    var xvec = sub(q.b, q.a);
+	    var yvec = sub(q.d, q.a);
+	    return crossProduct(xvec, yvec);
+	}
+
+	function angleBetweenPointAndShape(pnt, qaud) {
+	    var planeCenter = centerOfShape(qaud);
+	    var planeNormal = normalOfShape(qaud);
 	    var cellToPointVec = sub(planeCenter, pnt);
 	    return angleBetween(planeNormal, cellToPointVec);
 	}
-	function normalOfShape(shape) {
-	    var xvec = sub(shape.b, shape.a);
-	    var yvec = sub(shape.d, shape.a);
+	function normalOfShape(quad) {
+	    var xvec = sub(quad.b, quad.a);
+	    var yvec = sub(quad.d, quad.a);
 	    return crossProduct(xvec, yvec);
 	}
-	function centerOfShape(shape) {
-	    var ab = midpoint(shape.a, shape.b);
-	    var dc = midpoint(shape.d, shape.c);
+	function centerOfShape(quad) {
+	    var ab = midpoint(quad.a, quad.b);
+	    var dc = midpoint(quad.d, quad.c);
 	    return midpoint(ab, dc);
 	}
 
-	function illuminanceOfShape(sun, shape) {
-	    var angle = angleBetweenPointAndShape(sun, shape);
+	function illuminanceOfQuad(sun, quad) {
+	    var angle = angleBetweenPointAndShape(sun, quad);
 	    var illuminance = Math.max(0, -Math.cos(angle));
 	    return Math.pow(illuminance, Math.pow(2, 0));
 	}
 	function illuminanceOfEdge(sun, edge_start, edge_end, q1, q2) {
-	    var n1 = normalize(normal_of_shape(q1));
-	    var n2 = normalize(normal_of_shape(q2));
+	    var n1 = normalize(normal_of_quad(q1));
+	    var n2 = normalize(normal_of_quad(q2));
 	    var edge_normal = mul(add(n1, n2), 0.5);
 	    var edge_center = mul(add(edge_start, edge_end), 0.5);
 	    var edgeToSunVec = sub(edge_center, sun);
@@ -256,6 +274,11 @@
 	            { c: ['#ca456b', '#f19797', '#ffc7b3'], s: '#ca456b' },
 	            { c: ['#df5905', '#f9b73e', '#ffed62'], s: '#df5905' },
 	            { c: ['#c50040', '#ee5151', '#ff946c'], s: '#c50040' },
+	            { c: ['#d50028', '#fb671f', '#ffaa44'], s: '#d50028' },
+	            { c: ['#008c4c', '#6bbe3a', '#aff55d'], s: '#008c4c' },
+	            { c: ['#0049a4', '#0c75b7', '#00c3fd'], s: '#0049a4' },
+	            { c: ['#007150', '#0b9e4e', '#72dc6e'], s: '#007150' },
+	            { c: ['#5c0058', '#763f68', '#df7395'], s: '#5c0058' },
 	        ]
 	    },
 	    {
@@ -321,10 +344,10 @@
 	        label_front: 2,
 	        label_back: 1,
 	        color_sets: [
-	            { c: ['#003d89', '#2c6393', '#50d1e1'], s: '#003d89' },
 	            { c: ['#d07982', '#eecfca', '#ffffd8'], s: '#d07982' },
-	            { c: ['#3d0023', '#412432', '#a85d6a'], s: '#3d0023' },
 	            { c: ['#a82d3c', '#f25363', '#fee277'], s: '#b82d3c' },
+	            { c: ['#003d89', '#2c6393', '#50d1e1'], s: '#003d89' },
+	            { c: ['#3d0023', '#412432', '#a85d6a'], s: '#3d0023' },
 	        ]
 	    },
 	    {
@@ -609,9 +632,9 @@
 	    },
 	];
 
-	var color_set = palettes[5].color_sets;
-	var bg_col = '#ece9dd';
-	var cell_stroke_col = '#8fc5d6ff';
+	var color_set = palettes[11].color_sets;
+	var bg_col = '#c9cdc1';
+	var cell_stroke_col = '#9aa297';
 
 	var KAPPA = 24389 / 27;
 	var EPSILON = 216 / 24389;
@@ -775,17 +798,26 @@
 	    points = points.map(function (t) { return (__assign(__assign({}, t), { z: pos.z })); });
 	    return points.map(function (t) { return rotate_around(t, pos, rotation); });
 	}
+	function circle_points(pos, radius, point_distance) {
+	    var circumference = radius * Math.PI * 2;
+	    var number_of_points = Math.floor(circumference / point_distance);
+	    return __spreadArray([], new Array(number_of_points), true).map(function (_, i) { return point_on_circle(i / number_of_points, radius, pos); });
+	}
 	function points_on_line(from, to, number_of_points) {
 	    return __spreadArray([], new Array(number_of_points), true).map(function (_, i) { return lerp$1(from, to, i / number_of_points); });
 	}
 	function quarter_circle_points(radius, center_point, quartile, number_of_points) {
 	    return __spreadArray([], new Array(number_of_points), true).map(function (_, i) {
-	        return point_on_circle_from_index(i, radius, center_point, quartile, number_of_points);
+	        return point_on_circle_from_quartile_and_index(i, radius, center_point, quartile, number_of_points);
 	    });
 	}
-	function point_on_circle_from_index(index, radius, center_point, quartile, number_of_points) {
+	function point_on_circle_from_quartile_and_index(index, radius, center_point, quartile, number_of_points) {
 	    var ratio = index / number_of_points;
 	    var radian = (ratio + quartile) * (Math.PI / 2);
+	    return vec(Math.cos(radian) * radius + center_point.x, Math.sin(radian) * radius + center_point.y);
+	}
+	function point_on_circle(ratio, radius, center_point) {
+	    var radian = ratio * Math.PI * 2;
 	    return vec(Math.cos(radian) * radius + center_point.x, Math.sin(radian) * radius + center_point.y);
 	}
 	function number_of_corner_points_from_dist(dist, radius) {
@@ -814,6 +846,11 @@
 	    var partition = __spreadArray([], new Array(parts), true).map(function (_) { return []; });
 	    shuffled_map.forEach(function (x, i) { return partition[x].push(arr[i]); });
 	    return partition;
+	}
+	function random_subset(arr) {
+	    var pick = 1 + random_int(Math.pow(2, arr.length) - 1);
+	    var selector = pick.toString(2).padStart(arr.length, '0');
+	    return arr.filter(function (_, i) { return selector.charAt(i) == '1'; });
 	}
 	function get_alpha(i) {
 	    var a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -872,11 +909,11 @@
 	    return sides;
 	}
 
-	function hatchParallelogram(p, s, spacing, angle, offset) {
+	function hatchParallelogram(p, q, spacing, angle, offset) {
 	    if (offset === void 0) { offset = 0; }
 	    if (spacing <= 0)
 	        return;
-	    var pts = [s.a, s.b, s.c, s.d];
+	    var pts = [q.a, q.b, q.c, q.d];
 	    var ctx = p.drawingContext;
 	    ctx.save();
 	    ctx.beginPath();
@@ -885,8 +922,8 @@
 	        ctx.lineTo(pts[i].x, pts[i].y);
 	    ctx.closePath();
 	    ctx.clip();
-	    var cx = (s.a.x + s.b.x + s.c.x + s.d.x) / 4;
-	    var cy = (s.a.y + s.b.y + s.c.y + s.d.y) / 4;
+	    var cx = (q.a.x + q.b.x + q.c.x + q.d.x) / 4;
+	    var cy = (q.a.y + q.b.y + q.c.y + q.d.y) / 4;
 	    p.push();
 	    p.translate(cx, cy);
 	    p.rotate(angle);
@@ -911,7 +948,21 @@
 	    ctx.restore();
 	}
 
-	var sun = vec(-4000, -6000, 6500);
+	var cell_count = 0;
+	var generate_cell_id = function () {
+	    cell_count++;
+	    return cell_count;
+	};
+	var PIECE_MARGIN = 15;
+	var CELL_PAD = 15;
+	var BASIS_ROTATION = 0;
+	var BASIS_SQUISH = 1 / Math.sqrt(2);
+	var CIRCLE_DIST = 15;
+	var CIRCLE_RADIUS = 12;
+	var ANGLE_TRIES = 25;
+	var SPIN_TRIES = 20;
+
+	var sun = vec(-2100, -3300, 3750);
 	function display_piece_shadow(p, piece, bc) {
 	    if (piece.spec == undefined)
 	        return;
@@ -956,7 +1007,7 @@
 	    p.endShape(p.CLOSE);
 	}
 	function get_illum(pnts) {
-	    var shape = pnts.length > 4
+	    var q = pnts.length > 4
 	        ? {
 	            d: pnts[Math.floor(pnts.length * 0.875)],
 	            c: pnts[Math.floor(pnts.length * 0.625)],
@@ -964,7 +1015,7 @@
 	            a: pnts[Math.floor(pnts.length * 0.125)]
 	        }
 	        : { a: pnts[3], b: pnts[2], c: pnts[1], d: pnts[0] };
-	    return illuminanceOfShape(sun, shape);
+	    return illuminanceOfQuad(sun, q);
 	}
 	function display_backdrop(p, pnts, color_id, bc) {
 	    var palette = color_set[color_id];
@@ -980,13 +1031,13 @@
 	    p.endShape(p.CLOSE);
 	}
 	function display_face_edge(p, pnts, color_id, bc) {
-	    var flat_quad = shape(vec(100, 0, 0), vec(0, 100, 0), vec(-100, 0, 0), vec(0, -100, 0));
+	    var flat_quad = quad(vec(100, 0, 0), vec(0, 100, 0), vec(-100, 0, 0), vec(0, -100, 0));
 	    for (var i = 0; i < pnts.length - 1; i++) {
 	        var l1 = pnts[i];
 	        var l2 = pnts[i + 1];
 	        if (l1.x - l1.y > l2.x - l2.y)
 	            continue;
-	        var c1 = shape(l1, l2, add(l2, vec(0, 0, 10)), add(l1, vec(0, 0, 10)));
+	        var c1 = quad(l1, l2, add(l2, vec(0, 0, 10)), add(l1, vec(0, 0, 10)));
 	        var colorset = color_set[color_id];
 	        var scale_1 = lch_scale(colorset.c, 20);
 	        var illuminance = illuminanceOfEdge(sun, l1, l2, flat_quad, c1);
@@ -998,6 +1049,7 @@
 	}
 	function display_shadow(p, pnts, opacity, bc) {
 	    p.fill(0, opacity);
+	    p.fill(cell_stroke_col);
 	    p.noStroke();
 	    p.beginShape();
 	    for (var i = 0; i < pnts.length; i++) {
@@ -1060,21 +1112,27 @@
 	            }
 	        }
 	    }
-	    if (cell.token_points.length == 0) {
-	        var s = shape(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
+	    if (cell.spec.type == 'empty') {
+	        var s = quad(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
 	        p.strokeWeight(2);
-	        hatchParallelogram(p, s, 6, Math.PI / 12);
+	        hatchParallelogram(p, s, 6, BASIS_ROTATION * (Math.PI / 12));
 	        if (cell.leave_empty) {
-	            var tpos = bc(add(pnts[0], vec(10, 10)));
-	            display_text(p, tpos, 'G-' + cell.id, 18, false);
+	            var tpos = add(pnts[0], vec(10, 10));
+	            display_text(p, bc(tpos), 'G-' + cell.id, 18, false);
 	        }
-	        else {
+	        else if (cell.spec.show_index) {
 	            var px = lerp$1(pnts[0], pnts[3], 0.5);
 	            var py = lerp$1(pnts[0], pnts[1], 0.5);
-	            var tpos = bc(add(vec(px.x, py.y, px.z), vec(0, 0)));
+	            var tpos = add(vec(px.x, py.y, px.z), vec(0, 0));
 	            p.fill(bg_col);
-	            p.ellipse(tpos.x, tpos.y, 50, 50);
-	            display_text(p, tpos, pad_number(random_int(100), 2), 26, true);
+	            var circle_pnts = circle_points(tpos, 25, 2);
+	            p.beginShape();
+	            for (var i = 0; i < circle_pnts.length; i++) {
+	                var pnt = bc(circle_pnts[i]);
+	                p.vertex(pnt.x, pnt.y);
+	            }
+	            p.endShape(p.CLOSE);
+	            display_text(p, bc(tpos), pad_number(random_int(100), 2), 26, true);
 	        }
 	    }
 	    else {
@@ -1091,7 +1149,8 @@
 	    p.push();
 	    p.noStroke();
 	    p.translate(pos.x, pos.y);
-	    p.rotate(-Math.PI / 4 + Math.PI / 6);
+	    p.scale(1, BASIS_SQUISH);
+	    p.rotate(-Math.PI / 4 + BASIS_ROTATION * (Math.PI / 12));
 	    p.textSize(size);
 	    if (centered)
 	        p.textAlign(p.CENTER, p.CENTER);
@@ -1105,13 +1164,13 @@
 	    p.pop();
 	}
 
-	function get_base_change_function(scale, rotation, translation) {
+	function get_base_change_function(scale, translation) {
 	    if (translation === void 0) { translation = vec(0, 0, 0); }
-	    return function (pnt) { return translateWithBase(add(pnt, translation), get_bases(scale, rotation)); };
+	    return function (pnt) { return translateWithBase(add(pnt, translation), get_bases(scale)); };
 	}
-	function get_bases(scale, rotation) {
-	    var rot = (rotation * Math.PI) / 12;
-	    var squish = 1;
+	function get_bases(scale) {
+	    var rot = (BASIS_ROTATION * Math.PI) / 12;
+	    var squish = BASIS_SQUISH;
 	    var PHI1 = -(3 * Math.PI) / 4 + rot;
 	    var PHI2 = -(1 * Math.PI) / 4 + rot;
 	    var PHI3 = -Math.PI / 2 + rot;
@@ -1121,12 +1180,141 @@
 	    return [b1, b2, b3].map(function (b) { return mul(b, scale); });
 	}
 
-	var cell_count = 0;
-	var generate_cell_id = function () {
-	    cell_count++;
-	    return cell_count;
-	};
-	var PIECE_MARGIN = 15;
+	var CUTOFF_DELTA = CIRCLE_RADIUS / 2;
+	function execute_binary_search(predicate, delta, initial) {
+	    if (!predicate(initial)) {
+	        return -1;
+	    }
+	    return search(predicate, delta, initial, 0);
+	}
+	function search(predicate, delta, current, iteration) {
+	    var next_delta = delta(iteration);
+	    if (Math.abs(next_delta) < CUTOFF_DELTA)
+	        return current;
+	    var next = predicate(current) ? current + next_delta : current - next_delta;
+	    return search(predicate, delta, next, iteration + 1);
+	}
+
+	function circle(x, y, r) {
+	    if (r === void 0) { r = CIRCLE_RADIUS; }
+	    return { pos: vec(x, y), radius: r };
+	}
+	function shape(quad, inner_boundary, outer_boundary) {
+	    return { quad: quad, inner_boundary: inner_boundary, outer_boundary: outer_boundary };
+	}
+	function shape_from_rect(pos, rect) {
+	    var pnts = [vec(-1, -1), vec(1, -1), vec(1, 1), vec(-1, 1)].map(function (v) { return add(vmul(v, mul(rect.dim, 0.5)), pos); });
+	    var q = quad(pnts[0], pnts[1], pnts[2], pnts[3]);
+	    var outer_boundary_dim = mag(mul(rect.dim, 0.5)) + CIRCLE_RADIUS;
+	    var outer_boundary = circle(pos.x, pos.y, outer_boundary_dim);
+	    var inner_boundary_dim = Math.min(rect.dim.x / 2, rect.dim.y / 2) + CIRCLE_RADIUS;
+	    var inner_boundary = circle(pos.x, pos.y, inner_boundary_dim);
+	    return shape_from_quad(rotate_quad(q, pos, rect.rotation), outer_boundary, inner_boundary);
+	}
+	function shape_from_quad(quad, outer_boundary, inner_boundary) {
+	    return shape(quad, boundary_from_quad(quad, inner_boundary), outer_boundary);
+	}
+	function boundary_from_quad(quad, inner_boundary) {
+	    var pnts_ab = points_along_line(quad.a, quad.b, CIRCLE_DIST);
+	    var pnts_bc = points_along_line(quad.b, quad.c, CIRCLE_DIST);
+	    var pnts_cd = points_along_line(quad.c, quad.d, CIRCLE_DIST);
+	    var pnts_da = points_along_line(quad.d, quad.a, CIRCLE_DIST);
+	    return __spreadArray(__spreadArray(__spreadArray(__spreadArray([], pnts_ab, true), pnts_bc, true), pnts_cd, true), pnts_da, true).map(function (t) { return circle(t.x, t.y); }).concat([inner_boundary]);
+	}
+	function shape_overlaps_collection(s0, ss) {
+	    var proximity = ss.filter(function (s) { return shapes_are_within_proximity(s0, s); });
+	    return proximity.some(function (s) { return shapes_overlap(s0, s); });
+	}
+	function shapes_overlap(s1, s2) {
+	    return s1.inner_boundary.some(function (c1) { return s2.inner_boundary.some(function (c2) { return circles_overlap(c1, c2); }); });
+	}
+	function shapes_are_within_proximity(s1, s2) {
+	    return circles_overlap(s1.outer_boundary, s2.outer_boundary);
+	}
+	function circles_overlap(c1, c2) {
+	    return dist(c1.pos, c2.pos) < c1.radius + c2.radius;
+	}
+
+	function pack_cell(cell_dim, cell_spec) {
+	    var rects = cell_spec.allowed_piece_specs.map(function (ps, i) { return ({
+	        spec_id: i,
+	        dim: ps.profile.dim,
+	        rotation: 0
+	    }); });
+	    var packing = make_shape_packing(rects, cell_dim);
+	    var token_points = packing.map(function (s) { return ({
+	        pos: add(mul(cell_dim, 0.5), s.pos),
+	        spec: cell_spec.allowed_piece_specs[s.spec_id],
+	        rotation: s.rotation
+	    }); });
+	    return my_shuffle(token_points);
+	}
+	function make_shape_packing(rects, container_dim) {
+	    var packing = [];
+	    var next_shape;
+	    var retries = 0;
+	    while (retries < 5) {
+	        next_shape = get_next_shape(packing, rects, container_dim);
+	        if (next_shape == null)
+	            retries++;
+	        else
+	            packing.push(next_shape);
+	    }
+	    return packing;
+	}
+	function get_next_shape(ss, rects, container_dim) {
+	    var area_radius = mag(container_dim) / 2;
+	    var rectangle = pickAny(rects);
+	    var best_position = vec(area_radius, area_radius);
+	    var best_spin = 0;
+	    var found = false;
+	    var phi = Math.random() * Math.PI * 2;
+	    for (var i = 0; i < ANGLE_TRIES; i++) {
+	        phi += Math.PI * 2 * (i / ANGLE_TRIES);
+	        rectangle.rotation = Math.random() * Math.PI;
+	        for (var j = 0; j < SPIN_TRIES; j++) {
+	            rectangle.rotation += Math.PI * (j / SPIN_TRIES);
+	            var pred = get_predicate(phi, rectangle, ss);
+	            var delta_fn = get_delta_fn(area_radius);
+	            var center_dist = execute_binary_search(pred, delta_fn, area_radius * (1 + Math.random() * 0.2));
+	            var pos_x = Math.cos(phi) * center_dist;
+	            var pos_y = Math.sin(phi) * center_dist;
+	            var pos = vec(pos_x, pos_y);
+	            var within_container = is_within_container(shape_from_rect(pos, rectangle), container_dim);
+	            if (within_container && center_dist != -1 && mag(best_position) > mag(pos)) {
+	                best_position = pos;
+	                best_spin = rectangle.rotation;
+	                found = true;
+	            }
+	        }
+	    }
+	    if (found) {
+	        rectangle.rotation = best_spin;
+	        return {
+	            spec_id: rectangle.spec_id,
+	            pos: best_position,
+	            rotation: best_spin,
+	            shape: shape_from_rect(best_position, rectangle)
+	        };
+	    }
+	    return null;
+	}
+	function get_predicate(phi, rect, ss) {
+	    return function (n) {
+	        var pos_x = Math.cos(phi) * n;
+	        var pos_y = Math.sin(phi) * n;
+	        var s0 = shape_from_rect(vec(pos_x, pos_y), rect);
+	        return !shape_overlaps_collection(s0, ss.map(function (s) { return s.shape; }));
+	    };
+	}
+	function is_within_container(s0, container_dim) {
+	    return [s0.quad.a, s0.quad.b, s0.quad.c, s0.quad.d].every(function (v) { return Math.abs(v.x) < container_dim.x / 2 - CELL_PAD && Math.abs(v.y) < container_dim.y / 2 - CELL_PAD; });
+	}
+	function get_delta_fn(initial_radius) {
+	    return function (iteration) {
+	        return -initial_radius / Math.pow(2, iteration + 1);
+	    };
+	}
 
 	function decide_cell_wide_rotation(cell_dim, profile) {
 	    if (cell_dim.x - 30 < profile.dim.x + 15 || cell_dim.y - 30 < profile.dim.y + 15)
@@ -1136,902 +1324,11 @@
 	    return pickAny([0, Math.PI / 2]);
 	}
 
-	function tinyNDArrayOfInteger (gridShape) {
-	    var dimensions = gridShape.length,
-	        totalLength = 1,
-	        stride = new Array(dimensions),
-	        dimension;
-
-	    for (dimension = dimensions; dimension > 0; dimension--) {
-	        stride[dimension - 1] = totalLength;
-	        totalLength = totalLength * gridShape[dimension - 1];
-	    }
-
-	    return {
-	        stride: stride,
-	        data: new Uint32Array(totalLength)
-	    };
-	}
-
-	function tinyNDArrayOfArray (gridShape) {
-	    var dimensions = gridShape.length,
-	        totalLength = 1,
-	        stride = new Array(dimensions),
-	        data = [],
-	        dimension, index;
-
-	    for (dimension = dimensions; dimension > 0; dimension--) {
-	        stride[dimension - 1] = totalLength;
-	        totalLength = totalLength * gridShape[dimension - 1];
-	    }
-
-	    for (index = 0; index < totalLength; index++) {
-	        data.push([]);
-	    }
-
-	    return {
-	        stride: stride,
-	        data: data
-	    };
-	}
-
-	var tinyNdarray = {
-	    integer: tinyNDArrayOfInteger,
-	    array: tinyNDArrayOfArray
-	};
-
-	// sphere-random module by Mikola Lysenko under the MIT License
-	// waiting for https://github.com/scijs/sphere-random/pull/1 to be merged
-
-	var sphereRandom = sampleSphere;
-
-	/**
-	 * @param {int} d Dimensions
-	 * @param {Function} rng
-	 * @returns {Array}
-	 */
-	function sampleSphere(d, rng) {
-	    var v = new Array(d),
-	        d2 = Math.floor(d/2) << 1,
-	        r2 = 0.0,
-	        rr,
-	        r,
-	        theta,
-	        h,
-	        i;
-
-	    for (i = 0; i < d2; i += 2) {
-	        rr = -2.0 * Math.log(rng());
-	        r =  Math.sqrt(rr);
-	        theta = 2.0 * Math.PI * rng();
-
-	        r2+= rr;
-	        v[i] = r * Math.cos(theta);
-	        v[i+1] = r * Math.sin(theta);
-	    }
-
-	    if (d % 2) {
-	        var x = Math.sqrt(-2.0 * Math.log(rng())) * Math.cos(2.0 * Math.PI * rng());
-	        v[d - 1] = x;
-	        r2+= Math.pow(x, 2);
-	    }
-
-	    h = 1.0 / Math.sqrt(r2);
-
-	    for (i = 0; i < d; ++i) {
-	        v[i] *= h;
-	    }
-
-	    return v;
-	}
-
-	var moore = function moore(range, dimensions) {
-	  range = range || 1;
-	  dimensions = dimensions || 2;
-
-	  var size = range * 2 + 1;
-	  var length = Math.pow(size, dimensions) - 1;
-	  var neighbors = new Array(length);
-
-	  for (var i = 0; i < length; i++) {
-	    var neighbor = neighbors[i] = new Array(dimensions);
-	    var index = i < length / 2 ? i : i + 1;
-	    for (var dimension = 1; dimension <= dimensions; dimension++) {
-	      var value = index % Math.pow(size, dimension);
-	      neighbor[dimension - 1] = value / Math.pow(size, dimension - 1) - range;
-	      index -= value;
-	    }
-	  }
-
-	  return neighbors
-	};
-
-	/**
-	 * Get the neighbourhood ordered by distance, including the origin point
-	 * @param {int} dimensionNumber Number of dimensions
-	 * @returns {Array} Neighbourhood
-	 */
-	function getNeighbourhood (dimensionNumber) {
-	    var neighbourhood = moore(2, dimensionNumber),
-	        origin = [],
-	        dimension;
-
-	    // filter out neighbours who are too far from the center cell
-	    // the impact of this, performance wise, is surprisingly small, even in 3d and higher dimensions
-	    neighbourhood = neighbourhood.filter(function (n) {
-	        var dist = 0;
-
-	        for (var d = 0; d < dimensionNumber; d++) {
-	            dist += Math.pow(Math.max(0, Math.abs(n[d]) - 1), 2);
-	        }
-
-	        return dist < dimensionNumber; // cellSize = Math.sqrt(this.dimension)
-	    });
-
-	    for (dimension = 0; dimension < dimensionNumber; dimension++) {
-	        origin.push(0);
-	    }
-
-	    neighbourhood.push(origin);
-
-	    // sort by ascending distance to optimize proximity checks
-	    // see point 5.1 in Parallel Poisson Disk Sampling by Li-Yi Wei, 2008
-	    // http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.460.3061&rank=1
-	    neighbourhood.sort(function (n1, n2) {
-	        var squareDist1 = 0,
-	            squareDist2 = 0,
-	            dimension;
-
-	        for (dimension = 0; dimension < dimensionNumber; dimension++) {
-	            squareDist1 += Math.pow(n1[dimension], 2);
-	            squareDist2 += Math.pow(n2[dimension], 2);
-	        }
-
-	        if (squareDist1 < squareDist2) {
-	            return -1;
-	        } else if(squareDist1 > squareDist2) {
-	            return 1;
-	        } else {
-	            return 0;
-	        }
-	    });
-
-	    return neighbourhood;
-	}
-
-	var neighbourhoodCache = {};
-
-	/**
-	 * Get the neighbourhood ordered by distance, including the origin point
-	 * @param {int} dimensionNumber Number of dimensions
-	 * @returns {Array} Neighbourhood
-	 */
-	function getNeighbourhoodMemoized (dimensionNumber) {
-	    if (!neighbourhoodCache[dimensionNumber]) {
-	        neighbourhoodCache[dimensionNumber] = getNeighbourhood(dimensionNumber);
-	    }
-
-	    return neighbourhoodCache[dimensionNumber];
-	}
-
-	var neighbourhood = getNeighbourhoodMemoized;
-
-	var tinyNDArray$1 = tinyNdarray.integer;
-
-	/**
-	 * Get the squared euclidean distance from two points of arbitrary, but equal, dimensions
-	 * @param {Array} point1
-	 * @param {Array} point2
-	 * @returns {number} Squared euclidean distance
-	 */
-	function squaredEuclideanDistance (point1, point2) {
-	    var result = 0,
-	        i = 0;
-
-	    for (; i < point1.length; i++) {
-	        result += Math.pow(point1[i] - point2[i], 2);
-	    }
-
-	    return result;
-	}
-
-	/**
-	 * FixedDensityPDS constructor
-	 * @param {object} options Options
-	 * @param {Array} options.shape Shape of the space
-	 * @param {float} options.minDistance Minimum distance between each points
-	 * @param {float} [options.maxDistance] Maximum distance between each points, defaults to minDistance * 2
-	 * @param {int} [options.tries] Number of times the algorithm will try to place a point in the neighbourhood of another points, defaults to 30
-	 * @param {function|null} [rng] RNG function, defaults to Math.random
-	 * @constructor
-	 */
-	function FixedDensityPDS (options, rng) {
-	    if (typeof options.distanceFunction === 'function') {
-	        throw new Error('PoissonDiskSampling: Tried to instantiate the fixed density implementation with a distanceFunction');
-	    }
-
-	    this.shape = options.shape;
-	    this.minDistance = options.minDistance;
-	    this.maxDistance = options.maxDistance || options.minDistance * 2;
-	    this.maxTries = Math.ceil(Math.max(1, options.tries || 30));
-
-	    this.rng = rng || Math.random;
-
-	    // to replace with floatPrecisionMitigation = Math.max(1, Math.max(...this.shape) / 64 | 0) on the next major update
-	    var maxShape = 0;
-	    for (var i = 0; i < this.shape.length; i++) {
-	        maxShape = Math.max(maxShape, this.shape[i]);
-	    }
-	    var floatPrecisionMitigation = Math.max(1, maxShape / 128 | 0);
-	    var epsilonDistance = 1e-14 * floatPrecisionMitigation;
-
-	    this.dimension = this.shape.length;
-	    this.squaredMinDistance = this.minDistance * this.minDistance;
-	    this.minDistancePlusEpsilon = this.minDistance + epsilonDistance;
-	    this.deltaDistance = Math.max(0, this.maxDistance - this.minDistancePlusEpsilon);
-	    this.cellSize = this.minDistance / Math.sqrt(this.dimension);
-
-	    this.neighbourhood = neighbourhood(this.dimension);
-
-	    this.currentPoint = null;
-	    this.processList = [];
-	    this.samplePoints = [];
-
-	    // cache grid
-
-	    this.gridShape = [];
-
-	    for (var i = 0; i < this.dimension; i++) {
-	        this.gridShape.push(Math.ceil(this.shape[i] / this.cellSize));
-	    }
-
-	    this.grid = tinyNDArray$1(this.gridShape); //will store references to samplePoints
-	}
-
-	FixedDensityPDS.prototype.shape = null;
-	FixedDensityPDS.prototype.dimension = null;
-	FixedDensityPDS.prototype.minDistance = null;
-	FixedDensityPDS.prototype.maxDistance = null;
-	FixedDensityPDS.prototype.minDistancePlusEpsilon = null;
-	FixedDensityPDS.prototype.squaredMinDistance = null;
-	FixedDensityPDS.prototype.deltaDistance = null;
-	FixedDensityPDS.prototype.cellSize = null;
-	FixedDensityPDS.prototype.maxTries = null;
-	FixedDensityPDS.prototype.rng = null;
-	FixedDensityPDS.prototype.neighbourhood = null;
-
-	FixedDensityPDS.prototype.currentPoint = null;
-	FixedDensityPDS.prototype.processList = null;
-	FixedDensityPDS.prototype.samplePoints = null;
-	FixedDensityPDS.prototype.gridShape = null;
-	FixedDensityPDS.prototype.grid = null;
-
-	/**
-	 * Add a totally random point in the grid
-	 * @returns {Array} The point added to the grid
-	 */
-	FixedDensityPDS.prototype.addRandomPoint = function () {
-	    var point = new Array(this.dimension);
-
-	    for (var i = 0; i < this.dimension; i++) {
-	        point[i] = this.rng() * this.shape[i];
-	    }
-
-	    return this.directAddPoint(point);
-	};
-
-	/**
-	 * Add a given point to the grid
-	 * @param {Array} point Point
-	 * @returns {Array|null} The point added to the grid, null if the point is out of the bound or not of the correct dimension
-	 */
-	FixedDensityPDS.prototype.addPoint = function (point) {
-	    var dimension,
-	        valid = true;
-
-	    if (point.length === this.dimension) {
-	        for (dimension = 0; dimension < this.dimension && valid; dimension++) {
-	            valid = (point[dimension] >= 0 && point[dimension] < this.shape[dimension]);
-	        }
-	    } else {
-	        valid = false;
-	    }
-
-	    return valid ? this.directAddPoint(point) : null;
-	};
-
-	/**
-	 * Add a given point to the grid, without any check
-	 * @param {Array} point Point
-	 * @returns {Array} The point added to the grid
-	 * @protected
-	 */
-	FixedDensityPDS.prototype.directAddPoint = function (point) {
-	    var internalArrayIndex = 0,
-	        stride = this.grid.stride,
-	        dimension;
-
-	    this.processList.push(point);
-	    this.samplePoints.push(point);
-
-	    for (dimension = 0; dimension < this.dimension; dimension++) {
-	        internalArrayIndex += ((point[dimension] / this.cellSize) | 0) * stride[dimension];
-	    }
-
-	    this.grid.data[internalArrayIndex] = this.samplePoints.length; // store the point reference
-
-	    return point;
-	};
-
-	/**
-	 * Check whether a given point is in the neighbourhood of existing points
-	 * @param {Array} point Point
-	 * @returns {boolean} Whether the point is in the neighbourhood of another point
-	 * @protected
-	 */
-	FixedDensityPDS.prototype.inNeighbourhood = function (point) {
-	    var dimensionNumber = this.dimension,
-	        stride = this.grid.stride,
-	        neighbourIndex,
-	        internalArrayIndex,
-	        dimension,
-	        currentDimensionValue,
-	        existingPoint;
-
-	    for (neighbourIndex = 0; neighbourIndex < this.neighbourhood.length; neighbourIndex++) {
-	        internalArrayIndex = 0;
-
-	        for (dimension = 0; dimension < dimensionNumber; dimension++) {
-	            currentDimensionValue = ((point[dimension] / this.cellSize) | 0) + this.neighbourhood[neighbourIndex][dimension];
-
-	            if (currentDimensionValue < 0 || currentDimensionValue >= this.gridShape[dimension]) {
-	                internalArrayIndex = -1;
-	                break;
-	            }
-
-	            internalArrayIndex += currentDimensionValue * stride[dimension];
-	        }
-
-	        if (internalArrayIndex !== -1 && this.grid.data[internalArrayIndex] !== 0) {
-	            existingPoint = this.samplePoints[this.grid.data[internalArrayIndex] - 1];
-
-	            if (squaredEuclideanDistance(point, existingPoint) < this.squaredMinDistance) {
-	                return true;
-	            }
-	        }
-	    }
-
-	    return false;
-	};
-
-	/**
-	 * Try to generate a new point in the grid, returns null if it wasn't possible
-	 * @returns {Array|null} The added point or null
-	 */
-	FixedDensityPDS.prototype.next = function () {
-	    var tries,
-	        angle,
-	        distance,
-	        currentPoint,
-	        newPoint,
-	        inShape,
-	        i;
-
-	    while (this.processList.length > 0) {
-	        if (this.currentPoint === null) {
-	            this.currentPoint = this.processList.shift();
-	        }
-
-	        currentPoint = this.currentPoint;
-
-	        for (tries = 0; tries < this.maxTries; tries++) {
-	            inShape = true;
-	            distance = this.minDistancePlusEpsilon + this.deltaDistance * this.rng();
-
-	            if (this.dimension === 2) {
-	                angle = this.rng() * Math.PI * 2;
-	                newPoint = [
-	                    Math.cos(angle),
-	                    Math.sin(angle)
-	                ];
-	            } else {
-	                newPoint = sphereRandom(this.dimension, this.rng);
-	            }
-
-	            for (i = 0; inShape && i < this.dimension; i++) {
-	                newPoint[i] = currentPoint[i] + newPoint[i] * distance;
-	                inShape = (newPoint[i] >= 0 && newPoint[i] < this.shape[i]);
-	            }
-
-	            if (inShape && !this.inNeighbourhood(newPoint)) {
-	                return this.directAddPoint(newPoint);
-	            }
-	        }
-
-	        if (tries === this.maxTries) {
-	            this.currentPoint = null;
-	        }
-	    }
-
-	    return null;
-	};
-
-	/**
-	 * Automatically fill the grid, adding a random point to start the process if needed.
-	 * Will block the thread, probably best to use it in a web worker or child process.
-	 * @returns {Array[]} Sample points
-	 */
-	FixedDensityPDS.prototype.fill = function () {
-	    if (this.samplePoints.length === 0) {
-	        this.addRandomPoint();
-	    }
-
-	    while(this.next()) {}
-
-	    return this.samplePoints;
-	};
-
-	/**
-	 * Get all the points in the grid.
-	 * @returns {Array[]} Sample points
-	 */
-	FixedDensityPDS.prototype.getAllPoints = function () {
-	    return this.samplePoints;
-	};
-
-	/**
-	 * Get all the points in the grid along with the result of the distance function.
-	 * @throws Will always throw an error.
-	 */
-	FixedDensityPDS.prototype.getAllPointsWithDistance = function () {
-	    throw new Error('PoissonDiskSampling: getAllPointsWithDistance() is not available in fixed-density implementation');
-	};
-
-	/**
-	 * Reinitialize the grid as well as the internal state
-	 */
-	FixedDensityPDS.prototype.reset = function () {
-	    var gridData = this.grid.data,
-	        i = 0;
-
-	    // reset the cache grid
-	    for (i = 0; i < gridData.length; i++) {
-	        gridData[i] = 0;
-	    }
-
-	    // new array for the samplePoints as it is passed by reference to the outside
-	    this.samplePoints = [];
-
-	    // reset the internal state
-	    this.currentPoint = null;
-	    this.processList.length = 0;
-	};
-
-	var fixedDensity = FixedDensityPDS;
-
-	var tinyNDArray = tinyNdarray.array;
-
-	/**
-	 * Get the euclidean distance from two points of arbitrary, but equal, dimensions
-	 * @param {Array} point1
-	 * @param {Array} point2
-	 * @returns {number} Euclidean distance
-	 */
-	function euclideanDistance (point1, point2) {
-	    var result = 0,
-	        i = 0;
-
-	    for (; i < point1.length; i++) {
-	        result += Math.pow(point1[i] - point2[i], 2);
-	    }
-
-	    return Math.sqrt(result);
-	}
-
-	/**
-	 * VariableDensityPDS constructor
-	 * @param {object} options Options
-	 * @param {Array} options.shape Shape of the space
-	 * @param {float} options.minDistance Minimum distance between each points
-	 * @param {float} [options.maxDistance] Maximum distance between each points, defaults to minDistance * 2
-	 * @param {int} [options.tries] Number of times the algorithm will try to place a point in the neighbourhood of another points, defaults to 30
-	 * @param {function} options.distanceFunction Function to control the distance between each point depending on their position, must return a value between 0 and 1
-	 * @param {float} [options.bias] When using a distanceFunction, will indicate which point constraint takes priority when evaluating two points (0 for the lowest distance, 1 for the highest distance), defaults to 0
-	 * @param {function|null} rng RNG function, defaults to Math.random
-	 * @constructor
-	 */
-	function VariableDensityPDS (options, rng) {
-	    if (typeof options.distanceFunction !== 'function') {
-	        throw new Error('PoissonDiskSampling: Tried to instantiate the variable density implementation without a distanceFunction');
-	    }
-
-	    this.shape = options.shape;
-	    this.minDistance = options.minDistance;
-	    this.maxDistance = options.maxDistance || options.minDistance * 2;
-	    this.maxTries = Math.ceil(Math.max(1, options.tries || 30));
-	    this.distanceFunction = options.distanceFunction;
-	    this.bias = Math.max(0, Math.min(1, options.bias || 0));
-
-	    this.rng = rng || Math.random;
-
-	    // to replace with floatPrecisionMitigation = Math.max(1, Math.max(...this.shape) / 64 | 0) on the next major update
-	    var maxShape = 0;
-	    for (var i = 0; i < this.shape.length; i++) {
-	        maxShape = Math.max(maxShape, this.shape[i]);
-	    }
-	    var floatPrecisionMitigation = Math.max(1, maxShape / 128 | 0);
-	    var epsilonDistance = 1e-14 * floatPrecisionMitigation;
-
-	    this.dimension = this.shape.length;
-	    this.minDistancePlusEpsilon = this.minDistance + epsilonDistance;
-	    this.deltaDistance = Math.max(0, this.maxDistance - this.minDistancePlusEpsilon);
-	    this.cellSize = this.maxDistance / Math.sqrt(this.dimension);
-
-	    this.neighbourhood = neighbourhood(this.dimension);
-
-	    this.currentPoint = null;
-	    this.currentDistance = 0;
-	    this.processList = [];
-	    this.samplePoints = [];
-	    this.sampleDistance = []; // used to store the distance for a given point
-
-	    // cache grid
-
-	    this.gridShape = [];
-
-	    for (var i = 0; i < this.dimension; i++) {
-	        this.gridShape.push(Math.ceil(this.shape[i] / this.cellSize));
-	    }
-
-	    this.grid = tinyNDArray(this.gridShape); //will store references to samplePoints and sampleDistance
-	}
-
-	VariableDensityPDS.prototype.shape = null;
-	VariableDensityPDS.prototype.dimension = null;
-	VariableDensityPDS.prototype.minDistance = null;
-	VariableDensityPDS.prototype.maxDistance = null;
-	VariableDensityPDS.prototype.minDistancePlusEpsilon = null;
-	VariableDensityPDS.prototype.deltaDistance = null;
-	VariableDensityPDS.prototype.cellSize = null;
-	VariableDensityPDS.prototype.maxTries = null;
-	VariableDensityPDS.prototype.distanceFunction = null;
-	VariableDensityPDS.prototype.bias = null;
-	VariableDensityPDS.prototype.rng = null;
-	VariableDensityPDS.prototype.neighbourhood = null;
-
-	VariableDensityPDS.prototype.currentPoint = null;
-	VariableDensityPDS.prototype.currentDistance = null;
-	VariableDensityPDS.prototype.processList = null;
-	VariableDensityPDS.prototype.samplePoints = null;
-	VariableDensityPDS.prototype.sampleDistance = null;
-	VariableDensityPDS.prototype.gridShape = null;
-	VariableDensityPDS.prototype.grid = null;
-
-	/**
-	 * Add a totally random point in the grid
-	 * @returns {Array} The point added to the grid
-	 */
-	VariableDensityPDS.prototype.addRandomPoint = function () {
-	    var point = new Array(this.dimension);
-
-	    for (var i = 0; i < this.dimension; i++) {
-	        point[i] = this.rng() * this.shape[i];
-	    }
-
-	    return this.directAddPoint(point);
-	};
-
-	/**
-	 * Add a given point to the grid
-	 * @param {Array} point Point
-	 * @returns {Array|null} The point added to the grid, null if the point is out of the bound or not of the correct dimension
-	 */
-	VariableDensityPDS.prototype.addPoint = function (point) {
-	    var dimension,
-	        valid = true;
-
-	    if (point.length === this.dimension) {
-	        for (dimension = 0; dimension < this.dimension && valid; dimension++) {
-	            valid = (point[dimension] >= 0 && point[dimension] < this.shape[dimension]);
-	        }
-	    } else {
-	        valid = false;
-	    }
-
-	    return valid ? this.directAddPoint(point) : null;
-	};
-
-	/**
-	 * Add a given point to the grid, without any check
-	 * @param {Array} point Point
-	 * @returns {Array} The point added to the grid
-	 * @protected
-	 */
-	VariableDensityPDS.prototype.directAddPoint = function (point) {
-	    var internalArrayIndex = 0,
-	        stride = this.grid.stride,
-	        pointIndex = this.samplePoints.length,
-	        dimension;
-
-	    this.processList.push(pointIndex);
-	    this.samplePoints.push(point);
-	    this.sampleDistance.push(this.distanceFunction(point));
-
-	    for (dimension = 0; dimension < this.dimension; dimension++) {
-	        internalArrayIndex += ((point[dimension] / this.cellSize) | 0) * stride[dimension];
-	    }
-
-	    this.grid.data[internalArrayIndex].push(pointIndex); // store the point reference
-
-	    return point;
-	};
-
-	/**
-	 * Check whether a given point is in the neighbourhood of existing points
-	 * @param {Array} point Point
-	 * @returns {boolean} Whether the point is in the neighbourhood of another point
-	 * @protected
-	 */
-	VariableDensityPDS.prototype.inNeighbourhood = function (point) {
-	    var dimensionNumber = this.dimension,
-	        stride = this.grid.stride,
-	        neighbourIndex,
-	        internalArrayIndex,
-	        dimension,
-	        currentDimensionValue,
-	        existingPoint,
-	        existingPointDistance;
-
-	    var pointDistance = this.distanceFunction(point);
-
-	    for (neighbourIndex = 0; neighbourIndex < this.neighbourhood.length; neighbourIndex++) {
-	        internalArrayIndex = 0;
-
-	        for (dimension = 0; dimension < dimensionNumber; dimension++) {
-	            currentDimensionValue = ((point[dimension] / this.cellSize) | 0) + this.neighbourhood[neighbourIndex][dimension];
-
-	            if (currentDimensionValue < 0 || currentDimensionValue >= this.gridShape[dimension]) {
-	                internalArrayIndex = -1;
-	                break;
-	            }
-
-	            internalArrayIndex += currentDimensionValue * stride[dimension];
-	        }
-
-	        if (internalArrayIndex !== -1 && this.grid.data[internalArrayIndex].length > 0) {
-	            for (var i = 0; i < this.grid.data[internalArrayIndex].length; i++) {
-	                existingPoint = this.samplePoints[this.grid.data[internalArrayIndex][i]];
-	                existingPointDistance = this.sampleDistance[this.grid.data[internalArrayIndex][i]];
-
-	                var minDistance = Math.min(existingPointDistance, pointDistance);
-	                var maxDistance = Math.max(existingPointDistance, pointDistance);
-	                var dist = minDistance + (maxDistance - minDistance) * this.bias;
-
-	                if (euclideanDistance(point, existingPoint) < this.minDistance + this.deltaDistance * dist) {
-	                    return true;
-	                }
-	            }
-	        }
-	    }
-
-	    return false;
-	};
-
-	/**
-	 * Try to generate a new point in the grid, returns null if it wasn't possible
-	 * @returns {Array|null} The added point or null
-	 */
-	VariableDensityPDS.prototype.next = function () {
-	    var tries,
-	        angle,
-	        distance,
-	        currentPoint,
-	        currentDistance,
-	        newPoint,
-	        inShape,
-	        i;
-
-	    while (this.processList.length > 0) {
-	        if (this.currentPoint === null) {
-	            var sampleIndex = this.processList.shift();
-	            this.currentPoint = this.samplePoints[sampleIndex];
-	            this.currentDistance = this.sampleDistance[sampleIndex];
-	        }
-
-	        currentPoint = this.currentPoint;
-	        currentDistance = this.currentDistance;
-
-	        for (tries = 0; tries < this.maxTries; tries++) {
-	            inShape = true;
-	            distance = this.minDistancePlusEpsilon + this.deltaDistance * (currentDistance + (1 - currentDistance) * this.bias);
-
-	            if (this.dimension === 2) {
-	                angle = this.rng() * Math.PI * 2;
-	                newPoint = [
-	                    Math.cos(angle),
-	                    Math.sin(angle)
-	                ];
-	            } else {
-	                newPoint = sphereRandom(this.dimension, this.rng);
-	            }
-
-	            for (i = 0; inShape && i < this.dimension; i++) {
-	                newPoint[i] = currentPoint[i] + newPoint[i] * distance;
-	                inShape = (newPoint[i] >= 0 && newPoint[i] < this.shape[i]);
-	            }
-
-	            if (inShape && !this.inNeighbourhood(newPoint)) {
-	                return this.directAddPoint(newPoint);
-	            }
-	        }
-
-	        if (tries === this.maxTries) {
-	            this.currentPoint = null;
-	        }
-	    }
-
-	    return null;
-	};
-
-	/**
-	 * Automatically fill the grid, adding a random point to start the process if needed.
-	 * Will block the thread, probably best to use it in a web worker or child process.
-	 * @returns {Array[]} Sample points
-	 */
-	VariableDensityPDS.prototype.fill = function () {
-	    if (this.samplePoints.length === 0) {
-	        this.addRandomPoint();
-	    }
-
-	    while(this.next()) {}
-
-	    return this.samplePoints;
-	};
-
-	/**
-	 * Get all the points in the grid.
-	 * @returns {Array[]} Sample points
-	 */
-	VariableDensityPDS.prototype.getAllPoints = function () {
-	    return this.samplePoints;
-	};
-
-	/**
-	 * Get all the points in the grid along with the result of the distance function.
-	 * @returns {Array[]} Sample points with their distance function result
-	 */
-	VariableDensityPDS.prototype.getAllPointsWithDistance = function () {
-	    var result = new Array(this.samplePoints.length),
-	        i = 0,
-	        dimension = 0,
-	        point;
-
-	    for (i = 0; i < this.samplePoints.length; i++) {
-	        point = new Array(this.dimension + 1);
-
-	        for (dimension = 0; dimension < this.dimension; dimension++) {
-	            point[dimension] = this.samplePoints[i][dimension];
-	        }
-
-	        point[this.dimension] = this.sampleDistance[i];
-
-	        result[i] = point;
-	    }
-
-	    return result;
-	};
-
-	/**
-	 * Reinitialize the grid as well as the internal state
-	 */
-	VariableDensityPDS.prototype.reset = function () {
-	    var gridData = this.grid.data,
-	        i = 0;
-
-	    // reset the cache grid
-	    for (i = 0; i < gridData.length; i++) {
-	        gridData[i] = [];
-	    }
-
-	    // new array for the samplePoints as it is passed by reference to the outside
-	    this.samplePoints = [];
-
-	    // reset the internal state
-	    this.currentPoint = null;
-	    this.processList.length = 0;
-	};
-
-	var variableDensity = VariableDensityPDS;
-
-	/**
-	 * PoissonDiskSampling constructor
-	 * @param {object} options Options
-	 * @param {Array} options.shape Shape of the space
-	 * @param {float} options.minDistance Minimum distance between each points
-	 * @param {float} [options.maxDistance] Maximum distance between each points, defaults to minDistance * 2
-	 * @param {int} [options.tries] Number of times the algorithm will try to place a point in the neighbourhood of another points, defaults to 30
-	 * @param {function|null} [options.distanceFunction] Function to control the distance between each point depending on their position, must return a value between 0 and 1
-	 * @param {function|null} [options.bias] When using a distanceFunction, will indicate which point constraint takes priority when evaluating two points (0 for the lowest distance, 1 for the highest distance), defaults to 0
-	 * @param {function|null} [rng] RNG function, defaults to Math.random
-	 * @constructor
-	 */
-	function PoissonDiskSampling (options, rng) {
-	    this.shape = options.shape;
-
-	    if (typeof options.distanceFunction === 'function') {
-	        this.implementation = new variableDensity(options, rng);
-	    } else {
-	        this.implementation = new fixedDensity(options, rng);
-	    }
-	}
-
-	PoissonDiskSampling.prototype.implementation = null;
-
-	/**
-	 * Add a totally random point in the grid
-	 * @returns {Array} The point added to the grid
-	 */
-	PoissonDiskSampling.prototype.addRandomPoint = function () {
-	    return this.implementation.addRandomPoint();
-	};
-
-	/**
-	 * Add a given point to the grid
-	 * @param {Array} point Point
-	 * @returns {Array|null} The point added to the grid, null if the point is out of the bound or not of the correct dimension
-	 */
-	PoissonDiskSampling.prototype.addPoint = function (point) {
-	    return this.implementation.addPoint(point);
-	};
-
-	/**
-	 * Try to generate a new point in the grid, returns null if it wasn't possible
-	 * @returns {Array|null} The added point or null
-	 */
-	PoissonDiskSampling.prototype.next = function () {
-	    return this.implementation.next();
-	};
-
-	/**
-	 * Automatically fill the grid, adding a random point to start the process if needed.
-	 * Will block the thread, probably best to use it in a web worker or child process.
-	 * @returns {Array[]} Sample points
-	 */
-	PoissonDiskSampling.prototype.fill = function () {
-	    return this.implementation.fill();
-	};
-
-	/**
-	 * Get all the points in the grid.
-	 * @returns {Array[]} Sample points
-	 */
-	PoissonDiskSampling.prototype.getAllPoints = function () {
-	    return this.implementation.getAllPoints();
-	};
-
-	/**
-	 * Get all the points in the grid along with the result of the distance function.
-	 * @throws Will throw an error if a distance function was not provided to the constructor.
-	 * @returns {Array[]} Sample points with their distance function result
-	 */
-	PoissonDiskSampling.prototype.getAllPointsWithDistance = function () {
-	    return this.implementation.getAllPointsWithDistance();
-	};
-
-	/**
-	 * Reinitialize the grid as well as the internal state
-	 */
-	PoissonDiskSampling.prototype.reset = function () {
-	    this.implementation.reset();
-	};
-
-	var poissonDiskSampling = PoissonDiskSampling;
-
 	function fill_with_cell_specs(cells, piece_specs) {
 	    var ids = new Set(cells.map(function (c) { return c.id; }));
 	    var spec_map = new Map();
 	    ids.forEach(function (id) { return spec_map.set(id, get_cell_spec(cells.find(function (c) { return c.id == id; }).dim, piece_specs)); });
-	    cells.forEach(function (c) { return (c.spec = c.leave_empty ? get_empty_cell_spec() : spec_map.get(c.id)); });
+	    cells.forEach(function (c) { return (c.spec = c.leave_empty ? get_empty_cell_spec(c.dim) : spec_map.get(c.id)); });
 	}
 	function get_cell_spec(dim, piece_specs) {
 	    var has_spec_requirement = Math.random() < 0.5;
@@ -2039,17 +1336,29 @@
 	    var allowed_piece_specs = has_spec_requirement
 	        ? [chosen_spec]
 	        : piece_specs.filter(function (t) { return t.profile == chosen_spec.profile; });
-	    var cell_type = pickAny(['scatter', 'grid']);
+	    var allowed_scatter_specs = has_spec_requirement
+	        ? [chosen_spec]
+	        : Math.random() < 0.5
+	            ? piece_specs.filter(function (t) { return t.color_id == chosen_spec.color_id; })
+	            : random_subset(piece_specs);
+	    var cell_type = pickAny(['scatter', 'grid', 'scatter', 'grid', 'empty']);
 	    if (cell_type == 'scatter') {
-	        return get_scatter_cell_spec(allowed_piece_specs);
+	        return get_scatter_cell_spec(allowed_scatter_specs);
 	    }
 	    if (cell_type == 'grid') {
 	        return get_grid_cell_spec(dim, allowed_piece_specs);
 	    }
+	    if (cell_type == 'empty') {
+	        if (dim.x < 250 || dim.y < 250)
+	            return get_empty_cell_spec(dim);
+	        return get_scatter_cell_spec(allowed_scatter_specs);
+	    }
 	}
-	function get_empty_cell_spec() {
-	    console.log('empty cell spec');
-	    return { type: 'empty', allowed_piece_specs: [], rotation: 0 };
+	function get_empty_cell_spec(dim) {
+	    var show_index = Math.random() < 0.4;
+	    var has_stack = dim.x < 300 && dim.y < 300 && Math.random() < 0.2;
+	    var color_id = random_int(color_set.length);
+	    return { type: 'empty', show_index: show_index, has_stack: has_stack, color_id: color_id, allowed_piece_specs: [], rotation: 0 };
 	}
 	function get_scatter_cell_spec(allowed_piece_specs) {
 	    var profile = allowed_piece_specs[0].profile;
@@ -2077,22 +1386,7 @@
 	        return cell_spec.grid_layout == 'space-around'
 	            ? get_orderly_token_points(cell_dim, cell_spec, piece_profile.dim)
 	            : get_orderly_token_points2(cell_dim, cell_spec, piece_profile.dim);
-	    return get_scattered_token_points(cell_dim, piece_profile.dim);
-	}
-	function get_scattered_token_points(cell_dim, token_dim) {
-	    var dim = mag(token_dim);
-	    var pad = dim / 2 + 5;
-	    if (cell_dim.x < 2 * pad || cell_dim.y < 2 * pad)
-	        return [];
-	    var sampling = new poissonDiskSampling({
-	        shape: [cell_dim.x - pad * 2, cell_dim.y - pad * 2],
-	        minDistance: dim + 5,
-	        maxDistance: dim * 1.5,
-	        tries: 100
-	    });
-	    var points = sampling.fill().map(function (d) { return vec(d[0] + pad, d[1] + pad, cell_dim.z / 10); });
-	    points.sort(function (a, b) { return mag(sub(a, mul(cell_dim, 0.5))) - mag(sub(b, mul(cell_dim, 0.5))); });
-	    return points;
+	    return pack_cell(cell_dim, cell_spec);
 	}
 	function get_orderly_token_points(cell_dim, cell_spec, token_dim) {
 	    var dim = cell_spec.rotation == 0 ? token_dim : vec(token_dim.y, token_dim.x, token_dim.z);
@@ -2106,7 +1400,9 @@
 	        for (var j = 0; j < y; j++) {
 	            var px = pad + rest_x / 2 + (i + 0.5) * (dim.x + pad);
 	            var py = pad + rest_y / 2 + (y - j - 0.5) * (dim.y + pad);
-	            points.push(vec(px, py, cell_dim.z / 10));
+	            var pos = vec(px, py, cell_dim.z / 10);
+	            var token_point = { pos: pos, rotation: cell_spec.rotation, spec: cell_spec.allowed_piece_specs[0] };
+	            points.push(token_point);
 	        }
 	    }
 	    points.reverse();
@@ -2126,7 +1422,9 @@
 	        for (var j = 0; j < y; j++) {
 	            var px = (i + 0.5) * (dim.x + pad + inner_pad_x);
 	            var py = (y - j - 0.5) * (dim.y + pad + inner_pad_y);
-	            points.push(vec(px, py, cell_dim.z / 10));
+	            var pos = vec(px, py, cell_dim.z / 10);
+	            var token_point = { pos: pos, rotation: cell_spec.rotation, spec: cell_spec.allowed_piece_specs[0] };
+	            points.push(token_point);
 	        }
 	    }
 	    points.reverse();
@@ -2142,23 +1440,22 @@
 	function get_pieces(cells) {
 	    var pieces = [];
 	    cells.forEach(function (c) {
-	        var prob = 0.2 + Math.random();
+	        var prob = 0.25 + Math.random();
 	        var number_of_pieces = Math.round(c.token_points.length * prob);
 	        if (c.spec.type == 'grid' && c.spec.grid_layout == 'space-between' && c.spec.piece_distribution == 'single')
 	            number_of_pieces = 1;
 	        var token_points = c.token_points.slice(0, number_of_pieces);
 	        var suitable_piece_specs = c.spec.allowed_piece_specs;
 	        token_points.forEach(function (tp) {
-	            var spec = pickAny(suitable_piece_specs);
-	            var rotation_variance = c.spec.type == 'grid' ? 0.04 : 0.2;
-	            var rotation = c.spec.rotation + (Math.random() - 0.5) * Math.PI * rotation_variance;
-	            pieces.push({ spec: spec, rotation: rotation, pos: add(tp, c.pos), shadow: true });
+	            var spec = c.spec.type == 'scatter' ? tp.spec : pickAny(suitable_piece_specs);
+	            var rotation = c.spec.type == 'scatter' ? tp.rotation : c.spec.rotation + (Math.random() - 0.5) * Math.PI * 0.04;
+	            pieces.push({ spec: spec, rotation: rotation, pos: add(tp.pos, c.pos), shadow: true });
 	        });
-	        if (c.token_points.length == 0 && c.dim.x < 300 && c.dim.y < 300 && c.id % 4 == 3 && !c.leave_empty) {
+	        if (c.spec.type == 'empty' && c.spec.has_stack && !c.leave_empty) {
 	            var dim = vec(c.dim.x - 25, c.dim.y - 25, 8);
-	            var col = suitable_piece_specs[0].color_id;
+	            var col = c.spec.color_id;
 	            var spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } };
-	            var stack_height = 1 + random_int(4);
+	            var stack_height = random_int(4);
 	            for (var i = 0; i < stack_height; i++) {
 	                pieces.push({
 	                    spec: spec,
@@ -2195,21 +1492,21 @@
 	    return profiles;
 	}
 	function get_random_piece_profile(id) {
-	    var width = pickAny([40, 45, 50, 60, 120]);
-	    var length = pickAny([40, 45, 50, 60, 120]);
-	    var height = Math.max(10, pickAny([0.1, 0.2, 0.4, 0.6, 0.8, 1]) * Math.min(length, width));
+	    var width = pickAny([40, 50, 60, 80, 120]);
+	    var length = pickAny([40, 50, 60, 80, 120]);
+	    var height = Math.min(80, Math.max(15, pickAny([0.1, 0.2, 0.4, 0.6, 0.8, 1]) * Math.min(length, width)));
 	    var dim = vec(length, width, height);
-	    var corner_radius = pickAny([0.05, 0.1, 0.2, 0.499]) * Math.min(length, width);
-	    var tapering = height < 30 ? 1 : pickAny([0.75, 0.9, 1, 1]);
+	    var corner_radius = pickAny([0.1, 0.2, 0.499]) * Math.min(length, width);
+	    var tapering = height < 30 ? 1 : pickAny([0.8, 0.9, 1, 1]);
 	    return { id: id, dim: dim, corner_radius: corner_radius, tapering: tapering };
 	}
 	function get_piece_color_ids(n) {
-	    var colors = my_shuffle(__spreadArray([], new Array(color_set.length), true).map(function (_, i) { return i; }));
-	    return colors.slice(0, n);
+	    var colors = my_shuffle(__spreadArray([], new Array(n), true).map(function (_, i) { return i % color_set.length; }));
+	    return colors;
 	}
 
 	var min_dim = 0.08;
-	var slice_chance = 0.3;
+	var slice_chance = 0.4;
 	var terminal_chance = function (d) { return (d - 4) / 20; };
 	function create_supergrid() {
 	    var grid = [cell(vec(-0.5, -0.5), vec(1, 1, 0), 0, false)];
@@ -2259,8 +1556,8 @@
 	    return [container_cell, padded_cell];
 	}
 	function slice_cell(c, pad) {
-	    var max_x_cells = Math.min(5, Math.floor(c.dim.x / min_dim));
-	    var max_y_cells = Math.min(5, Math.floor(c.dim.y / min_dim));
+	    var max_x_cells = 1 + Math.min(5, Math.floor(c.dim.x / min_dim));
+	    var max_y_cells = 1 + Math.min(5, Math.floor(c.dim.y / min_dim));
 	    var x_cells = 1 + random_int(max_x_cells);
 	    var y_cells = 1 + random_int(max_y_cells);
 	    var pad_x = x_cells == 1 ? 0 : pad;
@@ -2348,19 +1645,18 @@
 	        p.smooth();
 	        p.strokeJoin(p.ROUND);
 	        p.translate(p.width / 2, p.height / 2);
-	        var bc = get_base_change_function(1, 2);
+	        var bc = get_base_change_function(1);
 	        p.strokeWeight(1);
 	        var number_of_profiles = 5;
-	        var number_of_colors = 4;
+	        var number_of_colors = 5;
 	        var ref_dim = Math.max(p.width, p.height);
 	        var profiles = get_piece_profiles(number_of_profiles);
 	        var color_ids = get_piece_color_ids(number_of_colors);
 	        var piece_specs = get_piece_specs(profiles, color_ids);
 	        var partition_cells = create_supergrid();
 	        var board_cells = partition_cells.map(function (pc) {
-	            return board_cell(pc.id, mul(pc.pos, ref_dim * 1.5), mul(pc.dim, ref_dim * 1.5), pc.leave_empty, null);
+	            return board_cell(pc.id, mul(pc.pos, ref_dim * 1.6), mul(pc.dim, ref_dim * 1.6), pc.leave_empty, null);
 	        });
-	        console.log(partition_cells);
 	        fill_with_cell_specs(board_cells, piece_specs);
 	        board_cells.forEach(function (bc) { return (bc.token_points = get_token_points(bc.dim, bc.spec)); });
 	        board_cells.forEach(function (t) { return display_cell(p, t, bc); });

@@ -1,9 +1,9 @@
 import * as vector from './vector';
-import { Vec, Shape } from './interfaces';
+import { Vec, Shape, Quad } from './interfaces';
 
-export function angleBetweenPointAndShape(pnt: Vec, shape: Shape): number {
-  const planeCenter = centerOfShape(shape);
-  const planeNormal = normalOfShape(shape);
+export function angleBetweenPointAndShape(pnt: Vec, qaud: Quad): number {
+  const planeCenter = centerOfShape(qaud);
+  const planeNormal = normalOfShape(qaud);
   const cellToPointVec = vector.sub(planeCenter, pnt);
   return vector.angleBetween(planeNormal, cellToPointVec);
 }
@@ -14,14 +14,14 @@ export function angleBetweenPointAndShape(pnt: Vec, shape: Shape): number {
 // D \  /
 //    \/ A
 
-function normalOfShape(shape: Shape): Vec {
-  const xvec = vector.sub(shape.b, shape.a);
-  const yvec = vector.sub(shape.d, shape.a);
+function normalOfShape(quad: Quad): Vec {
+  const xvec = vector.sub(quad.b, quad.a);
+  const yvec = vector.sub(quad.d, quad.a);
   return vector.crossProduct(xvec, yvec);
 }
 
-function centerOfShape(shape: Shape): Vec {
-  const ab = vector.midpoint(shape.a, shape.b);
-  const dc = vector.midpoint(shape.d, shape.c);
+function centerOfShape(quad: Quad): Vec {
+  const ab = vector.midpoint(quad.a, quad.b);
+  const dc = vector.midpoint(quad.d, quad.c);
   return vector.midpoint(ab, dc);
 }

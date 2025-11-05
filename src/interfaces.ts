@@ -1,6 +1,6 @@
 export type Vec = { x: number; y: number; z: number };
 
-export interface Shape {
+export interface Quad {
   a: Vec;
   b: Vec;
   c: Vec;
@@ -15,13 +15,14 @@ export type PartitionCell = {
   reflected: boolean;
   terminal: boolean;
   leave_empty: boolean;
+  is_padded: boolean;
 };
 
 export type BoardCell = {
   id: number;
   pos: Vec;
   dim: Vec; // TODO: generalize to bounding box?
-  token_points: Vec[];
+  token_points: TokenPoint[];
   leave_empty: boolean;
 
   spec: BoardCellSpec;
@@ -37,6 +38,9 @@ export type BaseCellSpec = {
 
 export type EmptyCellSpec = BaseCellSpec & {
   type: 'empty';
+  show_index: boolean;
+  has_stack: boolean;
+  color_id: number;
 };
 
 export type SingleCellSpec = BaseCellSpec & {
@@ -88,4 +92,37 @@ export type PieceProfile = {
   dim: Vec;
   corner_radius: number;
   tapering: number;
+};
+
+export type TokenPoint = {
+  pos: Vec;
+  spec: PieceSpec;
+  rotation: number;
+};
+
+// --- PACKING ---
+
+export type Circle = {
+  pos: Vec;
+  radius: number;
+};
+
+export type Shape = {
+  quad: Quad;
+  inner_boundary: Circle[];
+  outer_boundary: Circle;
+};
+
+export type TokenShape = {
+  shape: Shape;
+
+  spec_id: number;
+  pos: Vec;
+  rotation: number;
+};
+
+export type Rect = {
+  spec_id: number;
+  dim: Vec;
+  rotation: number;
 };
