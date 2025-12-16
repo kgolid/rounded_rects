@@ -832,10 +832,60 @@
 	    return Math.floor(corner_length / dist);
 	}
 
-	function pickAny(arr) {
-	    return arr[Math.floor(Math.random() * arr.length)];
+	var PARAMS = { seed: '', scale: 1, piece_color_count: 2, piece_profile_count: 6 };
+
+	var Random = (function () {
+	    function Random(hash) {
+	        this.useA = false;
+	        var sfc32 = function (uint128Hex) {
+	            var a = parseInt(uint128Hex.substring(0, 8), 16);
+	            var b = parseInt(uint128Hex.substring(8, 16), 16);
+	            var c = parseInt(uint128Hex.substring(16, 24), 16);
+	            var d = parseInt(uint128Hex.substring(24), 16);
+	            return function () {
+	                a |= 0;
+	                b |= 0;
+	                c |= 0;
+	                d |= 0;
+	                var t = (((a + b) | 0) + d) | 0;
+	                d = (d + 1) | 0;
+	                a = b ^ (b >>> 9);
+	                b = (c + (c << 3)) | 0;
+	                c = (c << 21) | (c >>> 11);
+	                c = (c + t) | 0;
+	                return (t >>> 0) / 4294967296;
+	            };
+	        };
+	        this.prngA = sfc32(hash.substring(0, 32));
+	        this.prngB = sfc32(hash.substring(32));
+	        for (var i = 0; i < 1e6; i += 2) {
+	            this.prngA();
+	            this.prngB();
+	        }
+	    }
+	    Random.prototype.random_dec = function () {
+	        this.useA = !this.useA;
+	        return this.useA ? this.prngA() : this.prngB();
+	    };
+	    return Random;
+	}());
+	var rand = new Random(PARAMS.seed);
+	function reset() {
+	    rand = new Random(PARAMS.seed);
 	}
-	var random_int = function (max) { return Math.floor(Math.random() * max); };
+	var rng = brnd;
+	function brnd() {
+	    return rand.random_dec();
+	}
+
+	function pickAny(arr) {
+	    return arr[Math.floor(rng() * arr.length)];
+	}
+	var random_int = function (max) { return Math.floor(rng() * max); };
+	var flip = function (chance) {
+	    if (chance === void 0) { chance = 0.5; }
+	    return rng() < chance;
+	};
 	var nmod = function (x, n) {
 	    return ((x % n) + n) % n;
 	};
@@ -846,6 +896,16 @@
 	        _a = [a[j], a[i]], a[i] = _a[0], a[j] = _a[1];
 	    }
 	    return a;
+	}
+	function createHash(rng) {
+	    if (rng === void 0) { rng = Math.random; }
+	    var alpha = '01234567890abcdef';
+	    var h = '';
+	    for (var i = 0; i < 64; i++) {
+	        h += alpha.charAt(Math.floor(rng() * alpha.length));
+	    }
+	    console.log(h);
+	    return h;
 	}
 	function random_partition(arr, parts) {
 	    var partition_map = __spreadArray([], new Array(arr.length), true).map(function (_, i) { return (i < parts ? i : random_int(parts)); });
@@ -1292,15 +1352,16 @@
 	    var best_position = vec(area_radius, area_radius);
 	    var best_spin = 0;
 	    var found = false;
-	    var phi = Math.random() * Math.PI * 2;
+	    var phi = rng() * Math.PI * 2;
 	    for (var i = 0; i < ANGLE_TRIES; i++) {
 	        phi += Math.PI * 2 * (i / ANGLE_TRIES);
-	        rectangle.rotation = Math.random() * Math.PI;
+	        rectangle.rotation = rng() * Math.PI;
 	        for (var j = 0; j < SPIN_TRIES; j++) {
 	            rectangle.rotation += Math.PI * (j / SPIN_TRIES);
 	            var pred = get_predicate(phi, rectangle, ss);
 	            var delta_fn = get_delta_fn(area_radius);
-	            var center_dist = execute_binary_search(pred, delta_fn, area_radius * (1 + Math.random() * 0.2));
+	            var initial_radius = area_radius * (1 + rng() * 0.2);
+	            var center_dist = execute_binary_search(pred, delta_fn, initial_radius);
 	            var pos_x = Math.cos(phi) * center_dist;
 	            var pos_y = Math.sin(phi) * center_dist;
 	            var pos = vec(pos_x, pos_y);
@@ -1355,14 +1416,14 @@
 	    cells.forEach(function (c) { return (c.spec = c.leave_empty ? get_empty_cell_spec(c.dim) : spec_map.get(c.id)); });
 	}
 	function get_cell_spec(dim, piece_specs) {
-	    var has_spec_requirement = Math.random() < 0.5;
+	    var has_spec_requirement = flip();
 	    var chosen_spec = pickAny(piece_specs);
 	    var allowed_piece_specs = has_spec_requirement
 	        ? [chosen_spec]
 	        : piece_specs.filter(function (t) { return t.profile == chosen_spec.profile; });
 	    var allowed_scatter_specs = has_spec_requirement
 	        ? [chosen_spec]
-	        : Math.random() < 0.5
+	        : flip()
 	            ? piece_specs.filter(function (t) { return t.color_id == chosen_spec.color_id; })
 	            : random_subset(piece_specs);
 	    var cell_type = pickAny(['scatter', 'grid', 'scatter', 'grid', 'empty']);
@@ -1379,14 +1440,14 @@
 	    }
 	}
 	function get_empty_cell_spec(dim) {
-	    var show_index = Math.random() < 0.4;
+	    var show_index = flip(0.4);
 	    var has_stack = false;
 	    var color_id = random_int(get_color_set().length);
 	    return { type: 'empty', show_index: show_index, has_stack: has_stack, color_id: color_id, allowed_piece_specs: [], rotation: 0 };
 	}
 	function get_scatter_cell_spec(allowed_piece_specs) {
 	    var profile = allowed_piece_specs[0].profile;
-	    var rotation = (Math.random() * Math.PI) / 2;
+	    var rotation = (rng() * Math.PI) / 2;
 	    var piece_dist = mag(profile.dim) + PIECE_MARGIN;
 	    return { type: 'scatter', allowed_piece_specs: allowed_piece_specs, rotation: rotation, piece_dist: piece_dist };
 	}
@@ -1464,15 +1525,15 @@
 	function get_pieces(cells) {
 	    var pieces = [];
 	    cells.forEach(function (c) {
-	        var prob = 0.25 + Math.random();
-	        var number_of_pieces = Math.round(c.token_points.length * prob);
+	        var density = 0.25 + rng();
+	        var number_of_pieces = Math.round(c.token_points.length * density);
 	        if (c.spec.type == 'grid' && c.spec.grid_layout == 'space-between' && c.spec.piece_distribution == 'single')
 	            number_of_pieces = 1;
 	        var token_points = c.token_points.slice(0, number_of_pieces);
 	        var suitable_piece_specs = c.spec.allowed_piece_specs;
 	        token_points.forEach(function (tp) {
 	            var spec = c.spec.type == 'scatter' ? tp.spec : pickAny(suitable_piece_specs);
-	            var rotation = c.spec.type == 'scatter' ? tp.rotation : c.spec.rotation + (Math.random() - 0.5) * Math.PI * 0.04;
+	            var rotation = c.spec.type == 'scatter' ? tp.rotation : c.spec.rotation + (rng() - 0.5) * Math.PI * 0.04;
 	            pieces.push({ spec: spec, rotation: rotation, pos: add(tp.pos, c.pos), shadow: true });
 	        });
 	        if (c.spec.type == 'empty' && c.spec.has_stack && !c.leave_empty) {
@@ -1483,7 +1544,7 @@
 	            for (var i = 0; i < stack_height; i++) {
 	                pieces.push({
 	                    spec: spec,
-	                    rotation: i == 0 ? 0 : (Math.random() - 0.5) * Math.PI * 0.03,
+	                    rotation: i == 0 ? 0 : (rng() - 0.5) * Math.PI * 0.03,
 	                    pos: vec(c.pos.x + c.dim.x / 2, c.pos.y + c.dim.y / 2, i * 14),
 	                    shadow: i == 0
 	                });
@@ -1539,9 +1600,9 @@
 	    return splitted;
 	}
 	function divide_cells_repeatedly(cells, iteration) {
-	    var chance = Math.sqrt((70 - iteration) / 50);
-	    if (Math.random() >= chance) {
-	        console.log('hit above ' + Math.round(chance * 100) / 100 + ' after ' + iteration + ' iterations.');
+	    var chance_of_continue = Math.sqrt((70 - iteration) / 50);
+	    if (rng() >= chance_of_continue) {
+	        console.log('hit above ' + Math.round(chance_of_continue * 100) / 100 + ' after ' + iteration + ' iterations.');
 	        return cells;
 	    }
 	    var cells_big_enough = cells.filter(function (c) { return (c.dim.x > min_dim * 1.1 || c.dim.y > min_dim * 1.1) && !c.terminal; });
@@ -1565,9 +1626,9 @@
 	    var conditional_pad = c.depth >= 8 ? 0 : pad;
 	    if (iteration < 1)
 	        return slice_cell(c, pad);
-	    if (c.depth > 1 && !c.is_padded && Math.random() < 0.1)
+	    if (c.depth > 1 && !c.is_padded && flip(0.1))
 	        return pad_cell(c, pad * 4);
-	    var pick_slice = Math.random() < slice_chance;
+	    var pick_slice = flip(slice_chance);
 	    if (pick_slice)
 	        return slice_cell(c, conditional_pad);
 	    return split_cell(c, conditional_pad);
@@ -1576,7 +1637,7 @@
 	    var new_dim = sub(c.dim, vec(2.5 * pad, 1.5 * pad));
 	    var new_pos = vec(1.75 * pad, 0.75 * pad);
 	    var container_cell = __assign(__assign({}, c), { pos: nullVector(), terminal: true, leave_empty: true });
-	    var terminal = Math.random() < terminal_chance(c.depth);
+	    var terminal = flip(terminal_chance(c.depth));
 	    var padded_cell = cell(new_pos, new_dim, c.depth, c.reflected, terminal);
 	    padded_cell.is_padded = true;
 	    return [container_cell, padded_cell];
@@ -1592,7 +1653,7 @@
 	    var cell_width = (c.dim.x + pad_x) / x_cells;
 	    var cell_height = (c.dim.y + pad_y) / y_cells;
 	    var depth = c.depth + depth_increase;
-	    var terminal = Math.random() < terminal_chance(depth);
+	    var terminal = flip(terminal_chance(depth));
 	    var id_1 = generate_cell_id();
 	    var id_2 = generate_cell_id();
 	    var cells = [];
@@ -1600,7 +1661,7 @@
 	        for (var i = 0; i < x_cells; i++) {
 	            var pos = vec(i * cell_width, j * cell_height, 0);
 	            var dim = vec(cell_width - pad_x, cell_height - pad_y, c.dim.z);
-	            var id = Math.random() < 0.05 ? id_2 : id_1;
+	            var id = flip(0.05) ? id_2 : id_1;
 	            var new_cell = cell(pos, dim, depth, c.reflected, terminal, id, c.leave_empty, c.is_padded);
 	            cells.push(new_cell);
 	        }
@@ -1613,7 +1674,7 @@
 	    if (c.dim.y < min_dim)
 	        return split_cell_vertically(c, pad);
 	    c.dim.x / (c.dim.x + c.dim.y);
-	    var pick_horisontal = 0.5 > Math.random();
+	    var pick_horisontal = flip();
 	    if (pick_horisontal)
 	        return split_cell_horisontally(c, pad);
 	    else
@@ -1621,12 +1682,12 @@
 	}
 	function split_cell_horisontally(c, pad) {
 	    var reflect = false;
-	    var r1 = (Math.random() + Math.random()) / 2;
+	    var r1 = (rng() + rng()) / 2;
 	    var r = 0.1 + r1 * 0.8;
 	    var split_y = c.dim.y * r;
 	    Math.min(c.dim.x, c.dim.y) / 2;
 	    var depth = c.depth + 1;
-	    var terminal = Math.random() < terminal_chance(depth);
+	    var terminal = flip(terminal_chance(depth));
 	    generate_cell_id();
 	    var c1 = cell(nullVector(), vec(c.dim.x, split_y - pad / 2, 0), depth, c.reflected, terminal, -1, c.leave_empty, c.is_padded);
 	    var c2 = cell(vec(0, split_y + pad / 2, 0), vec(c.dim.x, c.dim.y - split_y - pad / 2, 0), depth, c.reflected != reflect, terminal, -1, c.leave_empty, c.is_padded);
@@ -1634,12 +1695,14 @@
 	}
 	function split_cell_vertically(c, pad) {
 	    var reflect = false;
-	    var r1 = (Math.random() + Math.random() + Math.random()) / 3;
+	    var r1 = (rng() + rng()) / 2;
 	    var r = 0.1 + r1 * 0.8;
 	    var split_x = c.dim.x * r;
-	    Math.min(c.dim.x, c.dim.y) / 2;
+	    var min_dim = Math.min(c.dim.x, c.dim.y) / 2;
+	    min_dim * (1 + Math.pow(rng(), 4));
+	    min_dim * (1 + Math.pow(rng(), 4));
 	    var depth = c.depth + 1;
-	    var terminal = Math.random() < terminal_chance(depth);
+	    var terminal = flip(terminal_chance(depth));
 	    generate_cell_id();
 	    var c1 = cell(nullVector(), vec(split_x - pad / 2, c.dim.y, 0), depth, c.reflected, terminal, -1, c.leave_empty, c.is_padded);
 	    var c2 = cell(vec(split_x + pad / 2, 0, 0), vec(c.dim.x - split_x - pad / 2, c.dim.y, 0), depth, c.reflected != reflect, terminal, -1, c.leave_empty, c.is_padded);
@@ -1676,6 +1739,8 @@
 	        p.rect(-p.width / 2, -p.height / 2, p.width, p.height);
 	        var bc = get_base_change_function(1);
 	        p.strokeWeight(1);
+	        PARAMS.seed = createHash();
+	        reset();
 	        var number_of_profiles = 6;
 	        var number_of_colors = 2;
 	        console.log('number of colors: ', number_of_colors);

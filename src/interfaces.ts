@@ -127,3 +127,13 @@ export type Rect = {
   dim: Vec;
   rotation: number;
 };
+
+// --- PARAM ---
+
+export type ParameterList = {
+  seed: string;
+  scale: number;
+
+  piece_color_count: number;
+  piece_profile_count: number;
+};

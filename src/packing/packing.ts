@@ -4,6 +4,7 @@ import { execute_binary_search } from './search';
 import { shape_from_rect, shape_overlaps_collection } from './shape';
 import { add, mag, mul, vec } from '../vector';
 import { my_shuffle, pickAny } from '../util';
+import { rng } from '../random';
 
 export function pack_cell(cell_dim: Vec, cell_spec: BoardCellSpec): TokenPoint[] {
   let rects: Rect[] = cell_spec.allowed_piece_specs.map((ps, i) => ({
@@ -58,10 +59,10 @@ function get_next_shape(ss: TokenShape[], rects: Rect[], container_dim: Vec): To
   let best_spin = 0;
   let found = false;
 
-  let phi = Math.random() * Math.PI * 2;
+  let phi = rng() * Math.PI * 2;
   for (let i = 0; i < ANGLE_TRIES; i++) {
     phi += Math.PI * 2 * (i / ANGLE_TRIES);
-    rectangle.rotation = Math.random() * Math.PI;
+    rectangle.rotation = rng() * Math.PI;
 
     for (let j = 0; j < SPIN_TRIES; j++) {
       rectangle.rotation += Math.PI * (j / SPIN_TRIES);
@@ -69,7 +70,8 @@ function get_next_shape(ss: TokenShape[], rects: Rect[], container_dim: Vec): To
       let pred = get_predicate(phi, rectangle, ss);
       let delta_fn = get_delta_fn(area_radius);
 
-      let center_dist = execute_binary_search(pred, delta_fn, area_radius * (1 + Math.random() * 0.2));
+      let initial_radius = area_radius * (1 + rng() * 0.2);
+      let center_dist = execute_binary_search(pred, delta_fn, initial_radius);
 
       let pos_x = Math.cos(phi) * center_dist;
       let pos_y = Math.sin(phi) * center_dist;

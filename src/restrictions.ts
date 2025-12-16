@@ -1,5 +1,5 @@
 import { BoardCell, PieceProfile, PieceSpec, RestrictionMap, Vec } from './interfaces';
-import { pickAny } from './util';
+import { flip, pickAny } from './util';
 
 const always_true = (_: number) => true;
 
@@ -17,7 +17,7 @@ export const trivial_restriction: RestrictionMap = {
 //   cells.forEach((c) => (c.restrictions = restriction_map.get(c.id)));
 
 //   let orderly_map = new Map<number, boolean>();
-//   ids.forEach((id) => orderly_map.set(id, Math.random() < 0.7));
+//   ids.forEach((id) => orderly_map.set(id, rng() < 0.7));
 //   cells.forEach((c) => (c.orderly = orderly_map.get(c.id)));
 
 //   cells.forEach(
@@ -27,7 +27,7 @@ export const trivial_restriction: RestrictionMap = {
 //             t.dim,
 //             profiles.find((p) => t.restrictions.profile_id(p.id))
 //           )
-//         : (Math.random() * Math.PI) / 2)
+//         : (rng() * Math.PI) / 2)
 //   );
 // }
 
@@ -36,7 +36,7 @@ export function random_restriction(specs: PieceSpec[]): RestrictionMap {
   let chosen_color_id = chosen_spec.color_id;
   let chosen_profile_id = chosen_spec.profile.id;
 
-  let is_spec_restriction = Math.random() < 0.5;
+  let is_spec_restriction = flip();
   let type = is_spec_restriction ? 'spec' : 'profile';
 
   let profile_predicate = (t: number) => t == chosen_profile_id;

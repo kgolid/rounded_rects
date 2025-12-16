@@ -11,8 +11,9 @@ import {
   Vec,
 } from './interfaces';
 import { pack_cell } from './packing/packing';
+import { rng } from './random';
 import { decide_cell_wide_rotation } from './restrictions';
-import { my_shuffle, pickAny, random_int, random_subset } from './util';
+import { flip, my_shuffle, pickAny, random_int, random_subset } from './util';
 import { mag, mul, sub, vec } from './vector';
 import PoissonDiskSampling from 'poisson-disk-sampling';
 
@@ -25,7 +26,7 @@ export function fill_with_cell_specs(cells: BoardCell[], piece_specs: PieceSpec[
 }
 
 export function get_cell_spec(dim: Vec, piece_specs: PieceSpec[]): BoardCellSpec {
-  let has_spec_requirement = Math.random() < 0.5;
+  let has_spec_requirement = flip();
 
   let chosen_spec = pickAny(piece_specs);
   let allowed_piece_specs = has_spec_requirement
@@ -34,7 +35,7 @@ export function get_cell_spec(dim: Vec, piece_specs: PieceSpec[]): BoardCellSpec
 
   let allowed_scatter_specs = has_spec_requirement
     ? [chosen_spec]
-    : Math.random() < 0.5
+    : flip()
     ? piece_specs.filter((t) => t.color_id == chosen_spec.color_id)
     : random_subset(piece_specs);
 
@@ -53,15 +54,15 @@ export function get_cell_spec(dim: Vec, piece_specs: PieceSpec[]): BoardCellSpec
 }
 
 function get_empty_cell_spec(dim: Vec): EmptyCellSpec {
-  let show_index = Math.random() < 0.4;
-  let has_stack = false; //dim.x < 300 && dim.y < 300 && Math.random() < 0.2;
+  let show_index = flip(0.4);
+  let has_stack = false; //dim.x < 300 && dim.y < 300 && rng() < 0.2;
   let color_id = random_int(get_color_set().length);
   return { type: 'empty', show_index, has_stack, color_id, allowed_piece_specs: [], rotation: 0 };
 }
 
 function get_scatter_cell_spec(allowed_piece_specs: PieceSpec[]): ScatterCellSpec {
   let profile = allowed_piece_specs[0].profile;
-  let rotation = (Math.random() * Math.PI) / 2;
+  let rotation = (rng() * Math.PI) / 2;
   let piece_dist = mag(profile.dim) + PIECE_MARGIN;
   return { type: 'scatter', allowed_piece_specs, rotation, piece_dist };
 }

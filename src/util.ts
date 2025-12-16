@@ -1,3 +1,5 @@
+import { rng } from './random';
+
 export function last<T>(arr: T[]): T {
   return arr[arr.length - 1];
 }
@@ -7,10 +9,12 @@ export function reverse<T>(arr: T[]): T[] {
 }
 
 export function pickAny<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(rng() * arr.length)];
 }
 
-export const random_int = (max: number): number => Math.floor(Math.random() * max);
+export const random_int = (max: number): number => Math.floor(rng() * max);
+
+export const flip = (chance: number = 0.5): boolean => rng() < chance;
 
 export const nmod = function (x: number, n: number) {
   return ((x % n) + n) % n;

@@ -1,6 +1,7 @@
 import { generate_cell_id } from './globals';
 import { PartitionCell, Vec } from './interfaces';
-import { my_shuffle, random_int } from './util';
+import { rng } from './random';
+import { flip, my_shuffle, random_int } from './util';
 import { add, nullVector, sub, vec } from './vector';
 
 const min_dim = 0.12;
@@ -16,11 +17,11 @@ export function create_supergrid() {
   return splitted;
 }
 
-function divide_cells_repeatedly(cells: PartitionCell[], iteration: number) {
-  let chance = Math.sqrt((70 - iteration) / 50);
+function divide_cells_repeatedly(cells: PartitionCell[], iteration: number): PartitionCell[] {
+  let chance_of_continue = Math.sqrt((70 - iteration) / 50);
 
-  if (Math.random() >= chance) {
-    console.log('hit above ' + Math.round(chance * 100) / 100 + ' after ' + iteration + ' iterations.');
+  if (rng() >= chance_of_continue) {
+    console.log('hit above ' + Math.round(chance_of_continue * 100) / 100 + ' after ' + iteration + ' iterations.');
     return cells;
   }
 
@@ -64,9 +65,9 @@ function divide_cell(c: PartitionCell, iteration: number): PartitionCell[] {
   let conditional_pad = c.depth >= 8 ? 0 : pad;
   if (iteration < 1) return slice_cell(c, pad);
 
-  if (c.depth > 1 && !c.is_padded && Math.random() < 0.1) return pad_cell(c, pad * 4);
+  if (c.depth > 1 && !c.is_padded && flip(0.1)) return pad_cell(c, pad * 4);
 
-  let pick_slice = Math.random() < slice_chance;
+  let pick_slice = flip(slice_chance);
   if (pick_slice) return slice_cell(c, conditional_pad);
   return split_cell(c, conditional_pad);
 }
@@ -77,7 +78,7 @@ function pad_cell(c: PartitionCell, pad: number): PartitionCell[] {
 
   let container_cell = { ...c, pos: nullVector(), terminal: true, leave_empty: true };
 
-  let terminal = Math.random() < terminal_chance(c.depth);
+  let terminal = flip(terminal_chance(c.depth));
 
   let padded_cell = cell(new_pos, new_dim, c.depth, c.reflected, terminal);
   padded_cell.is_padded = true;
@@ -102,7 +103,7 @@ function slice_cell(c: PartitionCell, pad: number): PartitionCell[] {
   let cell_height = (c.dim.y + pad_y) / y_cells;
 
   let depth = c.depth + depth_increase;
-  let terminal = Math.random() < terminal_chance(depth);
+  let terminal = flip(terminal_chance(depth));
 
   let id_1 = generate_cell_id();
   let id_2 = generate_cell_id();
@@ -112,7 +113,7 @@ function slice_cell(c: PartitionCell, pad: number): PartitionCell[] {
       let pos = vec(i * cell_width, j * cell_height, 0);
       let dim = vec(cell_width - pad_x, cell_height - pad_y, c.dim.z);
 
-      let id = Math.random() < 0.05 ? id_2 : id_1;
+      let id = flip(0.05) ? id_2 : id_1;
 
       let new_cell = cell(pos, dim, depth, c.reflected, terminal, id, c.leave_empty, c.is_padded);
       cells.push(new_cell);
@@ -129,26 +130,26 @@ function split_cell(c: PartitionCell, pad: number): PartitionCell[] {
   if (c.dim.y < min_dim) return split_cell_vertically(c, pad);
 
   let hw_ratio = c.dim.x / (c.dim.x + c.dim.y); // Big number means wide cell, small number means tall cell.
-  let pick_horisontal = 0.5 > Math.random(); //hw_ratio;
+  let pick_horisontal = flip(); //hw_ratio;
 
   if (pick_horisontal) return split_cell_horisontally(c, pad);
   else return split_cell_vertically(c, pad);
 }
 
 function split_cell_horisontally(c: PartitionCell, pad: number): PartitionCell[] {
-  let reflect = false; //Math.random() < 0.2; //c.depth < 2;
+  let reflect = false; //rng() < 0.2; //c.depth < 2;
 
-  let r1 = (Math.random() + Math.random()) / 2;
+  let r1 = (rng() + rng()) / 2;
   let r = reflect ? 0.5 : 0.1 + r1 * 0.8;
 
   let split_y = c.dim.y * r;
 
   let min_dim = Math.min(c.dim.x, c.dim.y) / 2;
-  let h1 = min_dim * (1 + Math.random() ** 4);
-  let h2 = min_dim * (1 + Math.random() ** 4);
+  //let h1 = min_dim * (1 + rng() ** 4);
+  //let h2 = min_dim * (1 + rng() ** 4);
 
   let depth = c.depth + 1;
-  let terminal = Math.random() < terminal_chance(depth);
+  let terminal = flip(terminal_chance(depth));
 
   let id = generate_cell_id();
 
@@ -182,19 +183,19 @@ function split_cell_horisontally(c: PartitionCell, pad: number): PartitionCell[]
 }
 
 function split_cell_vertically(c: PartitionCell, pad: number): PartitionCell[] {
-  let reflect = false; //Math.random() < 0.2; //c.depth < 2;
+  let reflect = false; //rng() < 0.2; //c.depth < 2;
 
-  let r1 = (Math.random() + Math.random() + Math.random()) / 3;
+  let r1 = (rng() + rng()) / 2;
   let r = reflect ? 0.5 : 0.1 + r1 * 0.8;
 
   let split_x = c.dim.x * r;
 
   let min_dim = Math.min(c.dim.x, c.dim.y) / 2;
-  let h1 = min_dim * (1 + Math.random() ** 4);
-  let h2 = min_dim * (1 + Math.random() ** 4);
+  let h1 = min_dim * (1 + rng() ** 4);
+  let h2 = min_dim * (1 + rng() ** 4);
 
   let depth = c.depth + 1;
-  let terminal = Math.random() < terminal_chance(depth);
+  let terminal = flip(terminal_chance(depth));
 
   let id = generate_cell_id();
 
@@ -245,7 +246,7 @@ function cell(
   is_padded: boolean = false
 ): PartitionCell {
   if (id == -1) id = generate_cell_id();
-  //let terminal = Math.random() < (depth - 5) / 15;
+  //let terminal = rng() < (depth - 5) / 15;
 
   return { pos, dim, id, depth, reflected, terminal, leave_empty, is_padded };
 }

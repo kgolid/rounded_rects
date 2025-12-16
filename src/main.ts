@@ -8,6 +8,9 @@ import { create_supergrid } from './partition';
 import { bg_col, BG_COLOR_ID, set_color_set } from './colors';
 import { global_gradient } from './gradient';
 import { palettes } from './color_catalogue';
+import { PARAMS } from './params';
+import { createHash } from './util';
+import { reset } from './random';
 
 let sketch = function (p: P5) {
   p.setup = function () {
@@ -32,6 +35,9 @@ let sketch = function (p: P5) {
     let bc = get_base_change_function(1);
 
     p.strokeWeight(1);
+
+    PARAMS.seed = createHash();
+    reset();
 
     const number_of_profiles = 6;
     const number_of_colors = 2; //2 + random_int(4);
