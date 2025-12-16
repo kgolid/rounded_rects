@@ -1,4 +1,4 @@
-import { color_set } from './colors';
+import { get_color_set } from './colors';
 import { PIECE_MARGIN } from './globals';
 import {
   BoardCell,
@@ -54,8 +54,8 @@ export function get_cell_spec(dim: Vec, piece_specs: PieceSpec[]): BoardCellSpec
 
 function get_empty_cell_spec(dim: Vec): EmptyCellSpec {
   let show_index = Math.random() < 0.4;
-  let has_stack = dim.x < 300 && dim.y < 300 && Math.random() < 0.2;
-  let color_id = random_int(color_set.length);
+  let has_stack = false; //dim.x < 300 && dim.y < 300 && Math.random() < 0.2;
+  let color_id = random_int(get_color_set().length);
   return { type: 'empty', show_index, has_stack, color_id, allowed_piece_specs: [], rotation: 0 };
 }
 

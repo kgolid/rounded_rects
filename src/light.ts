@@ -1,14 +1,16 @@
 import { angleBetweenPointAndShape } from './geometry';
 import { Quad, Shape, Vec } from './interfaces';
-import { add, angleBetween, mul, normal_of_quad, normalize, sub } from './vector';
+import { add, angleBetween, mul, normal_of_quad, normalize, sub, vec } from './vector';
 
-export function illuminanceOfQuad(sun: Vec, quad: Quad): number {
+let sun = vec(-2100, -3300, 3750);
+
+export function illuminanceOfQuad(quad: Quad): number {
   const angle = angleBetweenPointAndShape(sun, quad);
   const illuminance = Math.max(0, -Math.cos(angle));
   return Math.pow(illuminance, Math.pow(2, 0));
 }
 
-export function illuminanceOfEdge(sun: Vec, edge_start: Vec, edge_end: Vec, q1: Quad, q2: Quad): number {
+export function illuminanceOfEdge(edge_start: Vec, edge_end: Vec, q1: Quad, q2: Quad): number {
   const n1 = normalize(normal_of_quad(q1));
   const n2 = normalize(normal_of_quad(q2));
 

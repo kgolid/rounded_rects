@@ -85,6 +85,7 @@ export type Piece = {
 export type PieceSpec = {
   color_id: number;
   profile: PieceProfile;
+  group: number;
 };
 
 export type PieceProfile = {

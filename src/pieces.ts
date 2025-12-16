@@ -1,4 +1,4 @@
-import { color_set } from './colors';
+import { get_color_set } from './colors';
 import { BoardCell, Piece, PieceProfile, PieceSpec } from './interfaces';
 import { my_shuffle, pickAny, random_int, random_partition } from './util';
 import { add, vec } from './vector';
@@ -25,7 +25,7 @@ export function get_pieces(cells: BoardCell[]) {
     if (c.spec.type == 'empty' && c.spec.has_stack && !c.leave_empty) {
       let dim = vec(c.dim.x - 25, c.dim.y - 25, 8);
       let col = c.spec.color_id;
-      let spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } };
+      let spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 }, group: 0 };
       let stack_height = random_int(4);
 
       for (let i = 0; i < stack_height; i++) {
@@ -47,14 +47,15 @@ export function get_piece_specs(profiles: PieceProfile[], color_ids: number[]) {
   let number_of_groups = 2;
   let grouped_profiles = random_partition(profiles, number_of_groups);
 
-  let grouped_colors = random_partition(color_ids, number_of_groups);
+  let grouped_colors = random_partition(color_ids, number_of_groups); // [color_ids.slice(0, 2), color_ids.slice(2)];
+  console.log(grouped_colors);
 
   let specs: PieceSpec[] = [];
   for (let i = 0; i < number_of_groups; i++) {
     let profiles = grouped_profiles[i];
     let colors = grouped_colors[i];
 
-    profiles.forEach((pr) => colors.forEach((ci) => specs.push({ color_id: ci, profile: pr })));
+    profiles.forEach((pr) => colors.forEach((ci) => specs.push({ color_id: ci, profile: pr, group: i })));
   }
 
   return specs;
@@ -83,6 +84,6 @@ function get_random_piece_profile(id: number): PieceProfile {
 }
 
 export function get_piece_color_ids(n: number): number[] {
-  let colors = my_shuffle([...new Array(n)].map((_, i) => i % color_set.length));
+  let colors = my_shuffle([...new Array(n)].map((_, i) => i % get_color_set().length));
   return colors;
 }

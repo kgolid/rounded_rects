@@ -10,20 +10,6 @@ export function shape(quad: Quad, inner_boundary: Circle[], outer_boundary: Circ
   return { quad, inner_boundary, outer_boundary };
 }
 
-// ----
-
-// export function random_rect(): Rect {
-//   let phi = Math.random() * Math.PI * 2;
-//   let dim_x = MIN_RECT_DIM + Math.random() * (MAX_RECT_DIM - MIN_RECT_DIM);
-//   let dim_y = MIN_RECT_DIM + Math.random() * (MAX_RECT_DIM - MIN_RECT_DIM);
-
-//   return { dim: vec(dim_x, dim_y), rotation: phi };
-// }
-
-// export function random_shape(pos: Vec) {
-//   return shape_from_rect(pos, random_rect());
-// }
-
 export function shape_from_rect(pos: Vec, rect: Rect) {
   let pnts = [vec(-1, -1), vec(1, -1), vec(1, 1), vec(-1, 1)].map((v) => add(vmul(v, mul(rect.dim, 0.5)), pos));
   let q = quad(pnts[0], pnts[1], pnts[2], pnts[3]);

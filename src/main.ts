@@ -5,24 +5,38 @@ import { get_base_change_function } from './bases';
 import { board_cell, fill_with_cell_specs, get_token_points } from './grid';
 import { get_piece_color_ids, get_piece_profiles, get_piece_specs, get_pieces } from './pieces';
 import { create_supergrid } from './partition';
-import { bg_col } from './colors';
+import { bg_col, BG_COLOR_ID, set_color_set } from './colors';
+import { global_gradient } from './gradient';
+import { palettes } from './color_catalogue';
 
 let sketch = function (p: P5) {
   p.setup = function () {
-    p.createCanvas(2000, 2800);
+    p.createCanvas(1000, 1400);
     p.pixelDensity(4);
+
     //p.background('#f2f5e5');
     p.background(bg_col);
     p.smooth();
     p.strokeJoin(p.ROUND);
     p.translate(p.width / 2, p.height / 2);
 
+    let c_id = 0; //random_int(palettes.length);
+    console.log('color id: ', c_id);
+    let color_set = palettes[c_id].color_sets;
+    //color_set = my_shuffle([...color_set]);
+    set_color_set(color_set);
+
+    p.drawingContext.fillStyle = global_gradient(p, BG_COLOR_ID);
+    p.rect(-p.width / 2, -p.height / 2, p.width, p.height);
+
     let bc = get_base_change_function(1);
 
     p.strokeWeight(1);
 
-    const number_of_profiles = 5;
-    const number_of_colors = 5;
+    const number_of_profiles = 6;
+    const number_of_colors = 2; //2 + random_int(4);
+
+    console.log('number of colors: ', number_of_colors);
 
     const ref_dim = Math.max(p.width, p.height);
 

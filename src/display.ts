@@ -2,18 +2,14 @@ import p5 from 'p5';
 import { BoardCell, Piece, Quad, Vec } from './interfaces';
 import { add, lerp, mul, nullVector, quad, scale, sub, vec } from './vector';
 import { illuminanceOfEdge, illuminanceOfQuad } from './light';
-import { bg_col, cell_stroke_col, color_set } from './colors';
+import { BG_COLOR_ID, get_color_set } from './colors';
 import { lch_scale } from './lch_scale';
 import { circle_points, rounded_rect_points } from './shapes';
 import { get_sides, get_silhouette } from './blocks';
 import { get_alpha, pad_number, random_int } from './util';
 import { hatchParallelogram } from './hatch';
 import { BASIS_ROTATION, BASIS_SQUISH } from './globals';
-
-//let sun = vec(-14000, -22000, 25000);
-//let sun = vec(-4000, -6000, 6500);
-let sun = vec(-2100, -3300, 3750);
-//let sun = vec(-1400, -2200, 2500);
+import { global_gradient } from './gradient';
 
 export function display_piece_shadow(p: p5, piece: Piece, bc: (_: Vec) => Vec) {
   if (piece.spec == undefined) return;
@@ -60,11 +56,11 @@ export function display_pnts(
   outline: boolean = false
 ) {
   let illuminance = get_illum(pnts);
-  let palette = lch_scale(color_set[color_id].c, color_levels);
+  let palette = lch_scale(get_color_set()[color_id].c, color_levels);
 
   let color = palette[Math.floor(illuminance * palette.length)];
   p.fill(color);
-  p.stroke(outline ? color_set[color_id].s : color);
+  p.stroke(outline ? get_color_set()[color_id].s : color);
   p.strokeWeight(1);
   p.beginShape();
   for (let i = 0; i < pnts.length; i++) {
@@ -85,11 +81,11 @@ function get_illum(pnts: Vec[]) {
         }
       : { a: pnts[3], b: pnts[2], c: pnts[1], d: pnts[0] };
 
-  return illuminanceOfQuad(sun, q);
+  return illuminanceOfQuad(q);
 }
 
 export function display_backdrop(p: p5, pnts: Vec[], color_id: number, bc: (_: Vec) => Vec) {
-  let palette = color_set[color_id];
+  let palette = get_color_set()[color_id];
   let color = palette.s;
 
   p.fill(color);
@@ -112,10 +108,10 @@ export function display_face_edge(p: p5, pnts: Vec[], color_id: number, bc: (_: 
     if (l1.x - l1.y > l2.x - l2.y) continue;
     let c1 = quad(l1, l2, add(l2, vec(0, 0, 10)), add(l1, vec(0, 0, 10)));
 
-    const colorset = color_set[color_id];
+    const colorset = get_color_set()[color_id];
 
     const scale = lch_scale(colorset.c, 20); // TODO: number of levels
-    const illuminance = illuminanceOfEdge(sun, l1, l2, flat_quad, c1);
+    const illuminance = illuminanceOfEdge(l1, l2, flat_quad, c1);
     const col = scale[Math.floor(illuminance * scale.length)];
 
     p.strokeWeight(2);
@@ -125,8 +121,9 @@ export function display_face_edge(p: p5, pnts: Vec[], color_id: number, bc: (_: 
 }
 
 export function display_shadow(p: p5, pnts: Vec[], opacity: number, bc: (_: Vec) => Vec) {
-  p.fill(0, opacity);
-  p.fill(cell_stroke_col);
+  //p.fill(0, opacity);
+  //p.fill(cell_stroke_col);
+  p.fill(get_color_set()[BG_COLOR_ID].s);
   p.noStroke();
   p.beginShape();
   for (let i = 0; i < pnts.length; i++) {
@@ -153,10 +150,13 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
     vec(pos.x + dim.x, pos.y, pos.z),
   ];
 
-  p.stroke(cell_stroke_col);
+  p.stroke(get_color_set()[BG_COLOR_ID].s);
+  //p.stroke(cell_stroke_col);
   p.strokeWeight(2);
 
-  p.fill(bg_col);
+  //p.fill(bg_col);
+
+  p.drawingContext.fillStyle = global_gradient(p, BG_COLOR_ID);
 
   p.beginShape();
   for (let i = 0; i < pnts.length; i++) {
@@ -202,9 +202,7 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
         display_text(p, tpos, label, 16, true);
       }
     }
-  }
-
-  if (cell.spec.type == 'empty') {
+  } else if (cell.spec.type == 'empty') {
     let s = quad(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
     p.strokeWeight(2);
     hatchParallelogram(p, s, 6, BASIS_ROTATION * (Math.PI / 12));
@@ -216,7 +214,7 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
       let px = lerp(pnts[0], pnts[3], 0.5);
       let py = lerp(pnts[0], pnts[1], 0.5);
       let tpos = add(vec(px.x, py.y, px.z), vec(0, 0));
-      p.fill(bg_col);
+      //p.fill(bg_col);
 
       let circle_pnts = circle_points(tpos, 25, 2);
 
@@ -245,6 +243,9 @@ export function display_cell(p: p5, cell: BoardCell, bc: (_: Vec) => Vec) {
 }
 
 function display_text(p: p5, pos: Vec, text: string, size: number, centered: boolean, invert: boolean = false) {
+  let bg_color = global_gradient(p, BG_COLOR_ID);
+  let stroke_color = get_color_set()[BG_COLOR_ID].s;
+
   p.push();
   p.noStroke();
   p.translate(pos.x, pos.y);
@@ -253,11 +254,17 @@ function display_text(p: p5, pos: Vec, text: string, size: number, centered: boo
   p.textSize(size);
   if (centered) p.textAlign(p.CENTER, p.CENTER);
   p.textStyle(p.BOLD);
-  p.fill(invert ? bg_col : cell_stroke_col);
-  p.stroke(invert ? cell_stroke_col : bg_col);
   p.strokeWeight(10);
-  p.text(text, 0, 0);
+
+  p.drawingContext.fillStyle = stroke_color;
+  p.drawingContext.strokeStyle = bg_color;
+
+  p.translate(-pos.x, -pos.y);
+  // p.fill(invert ? bg_col : cell_stroke_col);
+  // p.stroke(invert ? cell_stroke_col : bg_col);
+  p.drawingContext.strokeText(text, pos.x, pos.y);
+  p.drawingContext.fillText(text, pos.x, pos.y);
   p.noStroke();
-  p.text(text, 0, 0);
+  //p.drawingContext.fillText(text, 0, 0);
   p.pop();
 }

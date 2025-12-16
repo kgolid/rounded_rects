@@ -180,12 +180,13 @@
 	    return midpoint(ab, dc);
 	}
 
-	function illuminanceOfQuad(sun, quad) {
+	var sun = vec(-2100, -3300, 3750);
+	function illuminanceOfQuad(quad) {
 	    var angle = angleBetweenPointAndShape(sun, quad);
 	    var illuminance = Math.max(0, -Math.cos(angle));
 	    return Math.pow(illuminance, Math.pow(2, 0));
 	}
-	function illuminanceOfEdge(sun, edge_start, edge_end, q1, q2) {
+	function illuminanceOfEdge(edge_start, edge_end, q1, q2) {
 	    var n1 = normalize(normal_of_quad(q1));
 	    var n2 = normalize(normal_of_quad(q2));
 	    var edge_normal = mul(add(n1, n2), 0.5);
@@ -201,14 +202,14 @@
 	        label_front: 7,
 	        label_back: 2,
 	        color_sets: [
-	            { c: ['#582136', '#613455', '#5f5b99', '#7999b8'], s: '#582136' },
+	            { c: ['#342022', '#342022', '#6674b2'], s: '#342022' },
 	            { c: ['#fa2e13', '#fa2e13', '#fb4d3e', '#faa99e'], s: '#fa2e13' },
+	            { c: ['#582136', '#613455', '#5f5b99', '#7999b8'], s: '#582136' },
 	            { c: ['#9b95b3', '#b9b7df', '#d9d7e5', '#f5f1ee'], s: '#9b95b3' },
 	            { c: ['#feba4b', '#f8deed', '#fefdf9'], s: '#f19a83' },
 	            { c: ['#2c6d26', '#388627', '#00c15f', '#a0d049'], s: '#2c6d26' },
 	            { c: ['#67492e', '#577dc5', '#b7becf'], s: '#745a43' },
 	            { c: ['#f13e11', '#f79527', '#f7cf4b'], s: '#f13e11' },
-	            { c: ['#342022', '#342022', '#6674b2'], s: '#342022' },
 	        ]
 	    },
 	    {
@@ -632,9 +633,15 @@
 	    },
 	];
 
-	var color_set = palettes[11].color_sets;
-	var bg_col = '#c9cdc1';
-	var cell_stroke_col = '#9aa297';
+	var color_set = palettes[0].color_sets;
+	function get_color_set() {
+	    return color_set;
+	}
+	function set_color_set(cs) {
+	    color_set = cs;
+	}
+	var bg_col = '#fcdfcd';
+	var BG_COLOR_ID = 0;
 
 	var KAPPA = 24389 / 27;
 	var EPSILON = 216 / 24389;
@@ -962,7 +969,24 @@
 	var ANGLE_TRIES = 25;
 	var SPIN_TRIES = 20;
 
-	var sun = vec(-2100, -3300, 3750);
+	function global_gradient(p, color_id) {
+	    var gradient = p.drawingContext.createLinearGradient(0, -p.height / 2, 0, p.height / 2);
+	    var range = 1500;
+	    var upper_col = get_col(vec(range, range), color_id);
+	    var middle_col = get_col(vec(0, 0), color_id);
+	    var lower_col = get_col(vec(-range, -range), color_id);
+	    gradient.addColorStop(0, upper_col);
+	    gradient.addColorStop(0.5, middle_col);
+	    gradient.addColorStop(1, lower_col);
+	    return gradient;
+	}
+	function get_col(pos, color_id) {
+	    var q = quad(vec(pos.x - 5, pos.y - 5), vec(pos.x + 5, pos.y - 5), vec(pos.x + 5, pos.y + 5), vec(pos.x - 5, pos.y + 5));
+	    var illuminance = illuminanceOfQuad(q);
+	    var palette = lch_scale(get_color_set()[color_id].c, 20);
+	    return palette[Math.floor(illuminance * palette.length)];
+	}
+
 	function display_piece_shadow(p, piece, bc) {
 	    if (piece.spec == undefined)
 	        return;
@@ -994,10 +1018,10 @@
 	function display_pnts(p, pnts, color_id, color_levels, bc, outline) {
 	    if (outline === void 0) { outline = false; }
 	    var illuminance = get_illum(pnts);
-	    var palette = lch_scale(color_set[color_id].c, color_levels);
+	    var palette = lch_scale(get_color_set()[color_id].c, color_levels);
 	    var color = palette[Math.floor(illuminance * palette.length)];
 	    p.fill(color);
-	    p.stroke(outline ? color_set[color_id].s : color);
+	    p.stroke(outline ? get_color_set()[color_id].s : color);
 	    p.strokeWeight(1);
 	    p.beginShape();
 	    for (var i = 0; i < pnts.length; i++) {
@@ -1015,10 +1039,10 @@
 	            a: pnts[Math.floor(pnts.length * 0.125)]
 	        }
 	        : { a: pnts[3], b: pnts[2], c: pnts[1], d: pnts[0] };
-	    return illuminanceOfQuad(sun, q);
+	    return illuminanceOfQuad(q);
 	}
 	function display_backdrop(p, pnts, color_id, bc) {
-	    var palette = color_set[color_id];
+	    var palette = get_color_set()[color_id];
 	    var color = palette.s;
 	    p.fill(color);
 	    p.stroke(color);
@@ -1038,9 +1062,9 @@
 	        if (l1.x - l1.y > l2.x - l2.y)
 	            continue;
 	        var c1 = quad(l1, l2, add(l2, vec(0, 0, 10)), add(l1, vec(0, 0, 10)));
-	        var colorset = color_set[color_id];
+	        var colorset = get_color_set()[color_id];
 	        var scale_1 = lch_scale(colorset.c, 20);
-	        var illuminance = illuminanceOfEdge(sun, l1, l2, flat_quad, c1);
+	        var illuminance = illuminanceOfEdge(l1, l2, flat_quad, c1);
 	        var col = scale_1[Math.floor(illuminance * scale_1.length)];
 	        p.strokeWeight(2);
 	        p.stroke(col);
@@ -1048,8 +1072,7 @@
 	    }
 	}
 	function display_shadow(p, pnts, opacity, bc) {
-	    p.fill(0, opacity);
-	    p.fill(cell_stroke_col);
+	    p.fill(get_color_set()[BG_COLOR_ID].s);
 	    p.noStroke();
 	    p.beginShape();
 	    for (var i = 0; i < pnts.length; i++) {
@@ -1073,9 +1096,9 @@
 	        vec(pos.x + dim.x, pos.y + dim.y, pos.z),
 	        vec(pos.x + dim.x, pos.y, pos.z),
 	    ];
-	    p.stroke(cell_stroke_col);
+	    p.stroke(get_color_set()[BG_COLOR_ID].s);
 	    p.strokeWeight(2);
-	    p.fill(bg_col);
+	    p.drawingContext.fillStyle = global_gradient(p, BG_COLOR_ID);
 	    p.beginShape();
 	    for (var i = 0; i < pnts.length; i++) {
 	        var pnt = bc(pnts[i]);
@@ -1112,7 +1135,7 @@
 	            }
 	        }
 	    }
-	    if (cell.spec.type == 'empty') {
+	    else if (cell.spec.type == 'empty') {
 	        var s = quad(bc(pnts[0]), bc(pnts[1]), bc(pnts[2]), bc(pnts[3]));
 	        p.strokeWeight(2);
 	        hatchParallelogram(p, s, 6, BASIS_ROTATION * (Math.PI / 12));
@@ -1124,7 +1147,6 @@
 	            var px = lerp$1(pnts[0], pnts[3], 0.5);
 	            var py = lerp$1(pnts[0], pnts[1], 0.5);
 	            var tpos = add(vec(px.x, py.y, px.z), vec(0, 0));
-	            p.fill(bg_col);
 	            var circle_pnts = circle_points(tpos, 25, 2);
 	            p.beginShape();
 	            for (var i = 0; i < circle_pnts.length; i++) {
@@ -1145,7 +1167,8 @@
 	    }
 	}
 	function display_text(p, pos, text, size, centered, invert) {
-	    if (invert === void 0) { invert = false; }
+	    var bg_color = global_gradient(p, BG_COLOR_ID);
+	    var stroke_color = get_color_set()[BG_COLOR_ID].s;
 	    p.push();
 	    p.noStroke();
 	    p.translate(pos.x, pos.y);
@@ -1155,12 +1178,13 @@
 	    if (centered)
 	        p.textAlign(p.CENTER, p.CENTER);
 	    p.textStyle(p.BOLD);
-	    p.fill(invert ? bg_col : cell_stroke_col);
-	    p.stroke(invert ? cell_stroke_col : bg_col);
 	    p.strokeWeight(10);
-	    p.text(text, 0, 0);
+	    p.drawingContext.fillStyle = stroke_color;
+	    p.drawingContext.strokeStyle = bg_color;
+	    p.translate(-pos.x, -pos.y);
+	    p.drawingContext.strokeText(text, pos.x, pos.y);
+	    p.drawingContext.fillText(text, pos.x, pos.y);
 	    p.noStroke();
-	    p.text(text, 0, 0);
 	    p.pop();
 	}
 
@@ -1350,14 +1374,14 @@
 	    }
 	    if (cell_type == 'empty') {
 	        if (dim.x < 250 || dim.y < 250)
-	            return get_empty_cell_spec(dim);
+	            return get_empty_cell_spec();
 	        return get_scatter_cell_spec(allowed_scatter_specs);
 	    }
 	}
 	function get_empty_cell_spec(dim) {
 	    var show_index = Math.random() < 0.4;
-	    var has_stack = dim.x < 300 && dim.y < 300 && Math.random() < 0.2;
-	    var color_id = random_int(color_set.length);
+	    var has_stack = false;
+	    var color_id = random_int(get_color_set().length);
 	    return { type: 'empty', show_index: show_index, has_stack: has_stack, color_id: color_id, allowed_piece_specs: [], rotation: 0 };
 	}
 	function get_scatter_cell_spec(allowed_piece_specs) {
@@ -1454,7 +1478,7 @@
 	        if (c.spec.type == 'empty' && c.spec.has_stack && !c.leave_empty) {
 	            var dim = vec(c.dim.x - 25, c.dim.y - 25, 8);
 	            var col = c.spec.color_id;
-	            var spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 } };
+	            var spec = { color_id: col, profile: { id: 1, dim: dim, corner_radius: 5, tapering: 1 }, group: 0 };
 	            var stack_height = random_int(4);
 	            for (var i = 0; i < stack_height; i++) {
 	                pieces.push({
@@ -1473,11 +1497,12 @@
 	    var number_of_groups = 2;
 	    var grouped_profiles = random_partition(profiles, number_of_groups);
 	    var grouped_colors = random_partition(color_ids, number_of_groups);
+	    console.log(grouped_colors);
 	    var specs = [];
 	    var _loop_1 = function (i) {
 	        var profiles_1 = grouped_profiles[i];
 	        var colors = grouped_colors[i];
-	        profiles_1.forEach(function (pr) { return colors.forEach(function (ci) { return specs.push({ color_id: ci, profile: pr }); }); });
+	        profiles_1.forEach(function (pr) { return colors.forEach(function (ci) { return specs.push({ color_id: ci, profile: pr, group: i }); }); });
 	    };
 	    for (var i = 0; i < number_of_groups; i++) {
 	        _loop_1(i);
@@ -1501,20 +1526,20 @@
 	    return { id: id, dim: dim, corner_radius: corner_radius, tapering: tapering };
 	}
 	function get_piece_color_ids(n) {
-	    var colors = my_shuffle(__spreadArray([], new Array(n), true).map(function (_, i) { return i % color_set.length; }));
+	    var colors = my_shuffle(__spreadArray([], new Array(n), true).map(function (_, i) { return i % get_color_set().length; }));
 	    return colors;
 	}
 
-	var min_dim = 0.08;
-	var slice_chance = 0.4;
-	var terminal_chance = function (d) { return (d - 4) / 20; };
+	var min_dim = 0.12;
+	var slice_chance = 0.3;
+	var terminal_chance = function (d) { return (d - 3) / 50; };
 	function create_supergrid() {
 	    var grid = [cell(vec(-0.5, -0.5), vec(1, 1, 0), 0, false)];
 	    var splitted = divide_cells_repeatedly(grid, 0);
 	    return splitted;
 	}
 	function divide_cells_repeatedly(cells, iteration) {
-	    var chance = Math.sqrt((200 - iteration) / 50);
+	    var chance = Math.sqrt((70 - iteration) / 50);
 	    if (Math.random() >= chance) {
 	        console.log('hit above ' + Math.round(chance * 100) / 100 + ' after ' + iteration + ' iterations.');
 	        return cells;
@@ -1528,7 +1553,7 @@
 	    var pick_id = my_shuffle(Array.from(ids))[0];
 	    var picked_cells = cells.filter(function (c) { return c.id == pick_id; });
 	    var unpicked_cells = cells.filter(function (c) { return c.id != pick_id; });
-	    var divided_cells = divide_cell(picked_cells[0]);
+	    var divided_cells = divide_cell(picked_cells[0], iteration);
 	    var reflected_divided_cells = divided_cells.map(function (dc) { return reflect_cell(dc, picked_cells[0]); });
 	    var new_cells = picked_cells.flatMap(function (pc) {
 	        return (pc.reflected ? reflected_divided_cells : divided_cells).map(function (dc) { return (__assign(__assign({}, dc), { pos: add(dc.pos, pc.pos) })); });
@@ -1538,8 +1563,10 @@
 	function divide_cell(c, iteration) {
 	    var pad = 0.0025 + Math.pow((0.1 / (c.depth + 1)), 2);
 	    var conditional_pad = c.depth >= 8 ? 0 : pad;
+	    if (iteration < 1)
+	        return slice_cell(c, pad);
 	    if (c.depth > 1 && !c.is_padded && Math.random() < 0.1)
-	        return pad_cell(c, pad * 2);
+	        return pad_cell(c, pad * 4);
 	    var pick_slice = Math.random() < slice_chance;
 	    if (pick_slice)
 	        return slice_cell(c, conditional_pad);
@@ -1552,12 +1579,11 @@
 	    var terminal = Math.random() < terminal_chance(c.depth);
 	    var padded_cell = cell(new_pos, new_dim, c.depth, c.reflected, terminal);
 	    padded_cell.is_padded = true;
-	    console.log(c.id + ' -pad-> ' + padded_cell.id);
 	    return [container_cell, padded_cell];
 	}
 	function slice_cell(c, pad) {
-	    var max_x_cells = 1 + Math.min(5, Math.floor(c.dim.x / min_dim));
-	    var max_y_cells = 1 + Math.min(5, Math.floor(c.dim.y / min_dim));
+	    var max_x_cells = 1 + Math.min(6, Math.floor(c.dim.x / min_dim));
+	    var max_y_cells = 1 + Math.min(6, Math.floor(c.dim.y / min_dim));
 	    var x_cells = 1 + random_int(max_x_cells);
 	    var y_cells = 1 + random_int(max_y_cells);
 	    var pad_x = x_cells == 1 ? 0 : pad;
@@ -1567,17 +1593,18 @@
 	    var cell_height = (c.dim.y + pad_y) / y_cells;
 	    var depth = c.depth + depth_increase;
 	    var terminal = Math.random() < terminal_chance(depth);
-	    var id = generate_cell_id();
+	    var id_1 = generate_cell_id();
+	    var id_2 = generate_cell_id();
 	    var cells = [];
 	    for (var j = 0; j < y_cells; j++) {
 	        for (var i = 0; i < x_cells; i++) {
 	            var pos = vec(i * cell_width, j * cell_height, 0);
 	            var dim = vec(cell_width - pad_x, cell_height - pad_y, c.dim.z);
+	            var id = Math.random() < 0.05 ? id_2 : id_1;
 	            var new_cell = cell(pos, dim, depth, c.reflected, terminal, id, c.leave_empty, c.is_padded);
 	            cells.push(new_cell);
 	        }
 	    }
-	    console.log(c.id + ' -' + x_cells + ',' + y_cells + '-> ' + id);
 	    return cells;
 	}
 	function split_cell(c, pad) {
@@ -1603,8 +1630,6 @@
 	    generate_cell_id();
 	    var c1 = cell(nullVector(), vec(c.dim.x, split_y - pad / 2, 0), depth, c.reflected, terminal, -1, c.leave_empty, c.is_padded);
 	    var c2 = cell(vec(0, split_y + pad / 2, 0), vec(c.dim.x, c.dim.y - split_y - pad / 2, 0), depth, c.reflected != reflect, terminal, -1, c.leave_empty, c.is_padded);
-	    var arrow = ' -h--> ';
-	    console.log(c.id + arrow + c1.id + ', ' + c2.id + ' (' + r + ')');
 	    return [c1, c2];
 	}
 	function split_cell_vertically(c, pad) {
@@ -1618,8 +1643,6 @@
 	    generate_cell_id();
 	    var c1 = cell(nullVector(), vec(split_x - pad / 2, c.dim.y, 0), depth, c.reflected, terminal, -1, c.leave_empty, c.is_padded);
 	    var c2 = cell(vec(split_x + pad / 2, 0, 0), vec(c.dim.x - split_x - pad / 2, c.dim.y, 0), depth, c.reflected != reflect, terminal, -1, c.leave_empty, c.is_padded);
-	    var arrow = ' -v--> ';
-	    console.log(c.id + arrow + c1.id + ', ' + c2.id + ' (' + r + ')');
 	    return [c1, c2];
 	}
 	function reflect_cell(c, container) {
@@ -1639,16 +1662,23 @@
 
 	var sketch = function (p) {
 	    p.setup = function () {
-	        p.createCanvas(2000, 2800);
+	        p.createCanvas(1000, 1400);
 	        p.pixelDensity(4);
 	        p.background(bg_col);
 	        p.smooth();
 	        p.strokeJoin(p.ROUND);
 	        p.translate(p.width / 2, p.height / 2);
+	        var c_id = 0;
+	        console.log('color id: ', c_id);
+	        var color_set = palettes[c_id].color_sets;
+	        set_color_set(color_set);
+	        p.drawingContext.fillStyle = global_gradient(p, BG_COLOR_ID);
+	        p.rect(-p.width / 2, -p.height / 2, p.width, p.height);
 	        var bc = get_base_change_function(1);
 	        p.strokeWeight(1);
-	        var number_of_profiles = 5;
-	        var number_of_colors = 5;
+	        var number_of_profiles = 6;
+	        var number_of_colors = 2;
+	        console.log('number of colors: ', number_of_colors);
 	        var ref_dim = Math.max(p.width, p.height);
 	        var profiles = get_piece_profiles(number_of_profiles);
 	        var color_ids = get_piece_color_ids(number_of_colors);
