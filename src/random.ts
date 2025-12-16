@@ -44,7 +44,7 @@ class Random {
 
 let rand = new Random(PARAMS.seed);
 
-export function reset(): void {
+export function reset_rng(): void {
   rand = new Random(PARAMS.seed);
 }
 export const rng = brnd;

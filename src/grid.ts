@@ -5,6 +5,7 @@ import {
   BoardCellSpec,
   EmptyCellSpec,
   GridCellSpec,
+  PartitionCell,
   PieceSpec,
   ScatterCellSpec,
   TokenPoint,
@@ -196,4 +197,8 @@ export function board_cell(
   token_points: TokenPoint[] = []
 ): BoardCell {
   return { id, pos, dim, spec, token_points, leave_empty };
+}
+
+export function board_cell_from_partition_cell(pc: PartitionCell, scale: number) {
+  return board_cell(pc.id, mul(pc.pos, scale), mul(pc.dim, scale), pc.leave_empty, null);
 }

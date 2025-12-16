@@ -870,7 +870,7 @@
 	    return Random;
 	}());
 	var rand = new Random(PARAMS.seed);
-	function reset() {
+	function reset_rng() {
 	    rand = new Random(PARAMS.seed);
 	}
 	var rng = brnd;
@@ -1521,6 +1521,9 @@
 	    if (token_points === void 0) { token_points = []; }
 	    return { id: id, pos: pos, dim: dim, spec: spec, token_points: token_points, leave_empty: leave_empty };
 	}
+	function board_cell_from_partition_cell(pc, scale) {
+	    return board_cell(pc.id, mul(pc.pos, scale), mul(pc.dim, scale), pc.leave_empty, null);
+	}
 
 	function get_pieces(cells) {
 	    var pieces = [];
@@ -1723,49 +1726,85 @@
 	    return { pos: pos, dim: dim, id: id, depth: depth, reflected: reflected, terminal: terminal, leave_empty: leave_empty, is_padded: is_padded };
 	}
 
+	var CANVAS_WIDTH = 1000;
+	var CANVAS_HEIGHT = 1400;
+	var board_cells;
+	var pieces;
 	var sketch = function (p) {
 	    p.setup = function () {
-	        p.createCanvas(1000, 1400);
+	        p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 	        p.pixelDensity(4);
 	        p.background(bg_col);
 	        p.smooth();
 	        p.strokeJoin(p.ROUND);
-	        p.translate(p.width / 2, p.height / 2);
-	        var c_id = 0;
-	        console.log('color id: ', c_id);
-	        var color_set = palettes[c_id].color_sets;
-	        set_color_set(color_set);
-	        p.drawingContext.fillStyle = global_gradient(p, BG_COLOR_ID);
-	        p.rect(-p.width / 2, -p.height / 2, p.width, p.height);
-	        var bc = get_base_change_function(1);
-	        p.strokeWeight(1);
-	        PARAMS.seed = createHash();
-	        reset();
-	        var number_of_profiles = 6;
-	        var number_of_colors = 2;
-	        console.log('number of colors: ', number_of_colors);
-	        var ref_dim = Math.max(p.width, p.height);
-	        var profiles = get_piece_profiles(number_of_profiles);
-	        var color_ids = get_piece_color_ids(number_of_colors);
-	        var piece_specs = get_piece_specs(profiles, color_ids);
-	        var partition_cells = create_supergrid();
-	        var board_cells = partition_cells.map(function (pc) {
-	            return board_cell(pc.id, mul(pc.pos, ref_dim * 1.6), mul(pc.dim, ref_dim * 1.6), pc.leave_empty, null);
-	        });
-	        fill_with_cell_specs(board_cells, piece_specs);
-	        board_cells.forEach(function (bc) { return (bc.token_points = get_token_points(bc.dim, bc.spec)); });
-	        board_cells.forEach(function (t) { return display_cell(p, t, bc); });
-	        var pieces = get_pieces(board_cells);
-	        pieces.forEach(function (t) { return (t.shadow ? display_piece_shadow(p, t, bc) : {}); });
-	        pieces.forEach(function (t) { return display_piece(p, t, bc); });
+	        reset_canvas(p);
+	        create_new_board();
+	        draw_board(p);
 	    };
 	    p.draw = function () { };
 	    p.keyPressed = function () {
 	        if (p.keyCode === 80)
 	            p.saveCanvas('rounded-rects_' + Date.now(), 'jpeg');
+	        if (p.keyCode === 82) {
+	            reset_canvas(p);
+	            create_new_board();
+	            draw_board(p);
+	        }
+	        else if (p.keyCode === 84) {
+	            reset_canvas(p);
+	            create_new_pieces();
+	            draw_board(p);
+	        }
+	        else if (p.keyCode === 85) {
+	            reset_canvas(p);
+	            create_pieces();
+	            draw_board(p);
+	        }
 	    };
 	};
 	new P5(sketch);
+	function reset_canvas(p) {
+	    p.translate(p.width / 2, p.height / 2);
+	    draw_background(p, 0);
+	    PARAMS.seed = createHash();
+	    reset_rng();
+	}
+	function create_new_board() {
+	    create_board_cells();
+	    fill_board_cells();
+	    create_pieces();
+	}
+	function create_new_pieces() {
+	    fill_board_cells();
+	    create_pieces();
+	}
+	function create_board_cells() {
+	    var dim = Math.max(CANVAS_WIDTH, CANVAS_HEIGHT) * 1.6;
+	    board_cells = create_supergrid().map(function (pc) { return board_cell_from_partition_cell(pc, dim); });
+	}
+	function fill_board_cells() {
+	    var profiles = get_piece_profiles(PARAMS.piece_profile_count);
+	    var color_ids = get_piece_color_ids(PARAMS.piece_color_count);
+	    var piece_specs = get_piece_specs(profiles, color_ids);
+	    fill_with_cell_specs(board_cells, piece_specs);
+	    board_cells.forEach(function (c) { return (c.token_points = get_token_points(c.dim, c.spec)); });
+	}
+	function create_pieces() {
+	    pieces = get_pieces(board_cells);
+	}
+	function draw_background(p, palette_id) {
+	    console.log('color id: ', palette_id);
+	    var color_set = palettes[palette_id].color_sets;
+	    set_color_set(color_set);
+	    p.drawingContext.fillStyle = global_gradient(p, BG_COLOR_ID);
+	    p.rect(-p.width / 2, -p.height / 2, p.width, p.height);
+	}
+	function draw_board(p) {
+	    var bc = get_base_change_function(1);
+	    board_cells.forEach(function (t) { return display_cell(p, t, bc); });
+	    pieces.forEach(function (t) { return (t.shadow ? display_piece_shadow(p, t, bc) : {}); });
+	    pieces.forEach(function (t) { return display_piece(p, t, bc); });
+	}
 
 }));
 //# sourceMappingURL=index.js.map
