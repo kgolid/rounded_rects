@@ -181,7 +181,7 @@ function get_orderly_token_points2(cell_dim: Vec, cell_spec: GridCellSpec, token
 
   points.reverse();
 
-  if (cell_spec.piece_distribution == 'random' || cell_spec.piece_distribution == 'single') points = my_shuffle(points);
+  //if (cell_spec.piece_distribution == 'random' || cell_spec.piece_distribution == 'single') points = my_shuffle(points);
 
   return points;
 }

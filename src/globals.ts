@@ -22,3 +22,11 @@ export const MIN_RECT_DIM = 20;
 export const MAX_RECT_DIM = 100;
 
 export const INITIAL_RADIUS = 300;
+
+// --- RNG ---
+
+export let RNG_SEED = '';
+
+export function set_rng_seed(seed: string) {
+  RNG_SEED = seed;
+}

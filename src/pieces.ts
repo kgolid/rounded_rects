@@ -10,10 +10,15 @@ export function get_pieces(cells: BoardCell[]) {
     let density = 0.25 + rng();
     let number_of_pieces = Math.round(c.token_points.length * density);
 
+    let token_points = [...c.token_points];
+
+    if (c.spec.type == 'grid' && (c.spec.piece_distribution == 'random' || c.spec.piece_distribution == 'single'))
+      token_points = my_shuffle(token_points);
+
     if (c.spec.type == 'grid' && c.spec.grid_layout == 'space-between' && c.spec.piece_distribution == 'single')
       number_of_pieces = 1;
 
-    let token_points = c.token_points.slice(0, number_of_pieces);
+    token_points = token_points.slice(0, number_of_pieces);
     let suitable_piece_specs = c.spec.allowed_piece_specs;
 
     token_points.forEach((tp) => {

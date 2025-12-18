@@ -1,4 +1,4 @@
-import { PARAMS } from './params';
+import { RNG_SEED } from './globals';
 
 class Random {
   useA: boolean;
@@ -42,10 +42,10 @@ class Random {
   }
 }
 
-let rand = new Random(PARAMS.seed);
+let rand = new Random(RNG_SEED);
 
-export function reset_rng(): void {
-  rand = new Random(PARAMS.seed);
+export function reset_rng(seed: string): void {
+  rand = new Random(seed);
 }
 export const rng = brnd;
 

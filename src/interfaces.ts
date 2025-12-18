@@ -131,9 +131,14 @@ export type Rect = {
 // --- PARAM ---
 
 export type ParameterList = {
-  seed: string;
+  master_seed: string;
+  board_seed: string;
+  spec_seed: string;
+  piece_seed: string;
   scale: number;
 
   piece_color_count: number;
   piece_profile_count: number;
+
+  palette_id: number;
 };

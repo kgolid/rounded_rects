@@ -1,16 +1,16 @@
 import P5 from 'p5';
 import { display_cell, display_piece, display_piece_shadow } from './display';
 import { get_base_change_function } from './bases';
-import { board_cell, board_cell_from_partition_cell, fill_with_cell_specs, get_token_points } from './grid';
+import { board_cell_from_partition_cell, fill_with_cell_specs, get_token_points } from './grid';
 import { get_piece_color_ids, get_piece_profiles, get_piece_specs, get_pieces } from './pieces';
 import { create_supergrid } from './partition';
 import { bg_col, BG_COLOR_ID, set_color_set } from './colors';
 import { global_gradient } from './gradient';
 import { palettes } from './color_catalogue';
 import { PARAMS } from './params';
-import { createHash } from './util';
 import { BoardCell, Piece } from './interfaces';
 import { reset_rng } from './random';
+import createGUI from './gui';
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1400;
@@ -26,7 +26,8 @@ let sketch = function (p: P5) {
     p.smooth();
     p.strokeJoin(p.ROUND);
 
-    reset_canvas(p);
+    createGUI(create_new_board, refill_board_cells, create_new_pieces, () => draw_board(p));
+
     create_new_board();
     draw_board(p);
   };
@@ -35,43 +36,29 @@ let sketch = function (p: P5) {
 
   p.keyPressed = function () {
     if (p.keyCode === 80) p.saveCanvas('rounded-rects_' + Date.now(), 'jpeg'); // Press P to download image
-    if (p.keyCode === 82) {
-      // R
-      reset_canvas(p);
-      create_new_board();
-      draw_board(p);
-    } else if (p.keyCode === 84) {
-      // T
-      reset_canvas(p);
-      create_new_pieces();
-      draw_board(p);
-    } else if (p.keyCode === 85) {
-      // U
-      reset_canvas(p);
-      create_pieces();
-      draw_board(p);
-    }
   };
 };
 
 new P5(sketch);
 
-function reset_canvas(p: P5) {
-  p.translate(p.width / 2, p.height / 2);
-  draw_background(p, 0);
-
-  PARAMS.seed = createHash();
-  reset_rng();
+function create_new_board() {
+  reset_rng(PARAMS.board_seed);
+  create_board_cells();
+  reset_rng(PARAMS.spec_seed);
+  fill_board_cells();
+  reset_rng(PARAMS.piece_seed);
+  create_pieces();
 }
 
-function create_new_board() {
-  create_board_cells();
+function refill_board_cells() {
+  reset_rng(PARAMS.spec_seed);
   fill_board_cells();
+  reset_rng(PARAMS.piece_seed);
   create_pieces();
 }
 
 function create_new_pieces() {
-  fill_board_cells();
+  reset_rng(PARAMS.piece_seed);
   create_pieces();
 }
 
@@ -95,17 +82,17 @@ function create_pieces() {
 
 // --- DRAW ---
 
-function draw_background(p: P5, palette_id: number) {
-  console.log('color id: ', palette_id);
-  let color_set = palettes[palette_id].color_sets;
-  //color_set = my_shuffle([...color_set]);
-  set_color_set(color_set);
-
+function draw_background(p: P5) {
   p.drawingContext.fillStyle = global_gradient(p, BG_COLOR_ID);
   p.rect(-p.width / 2, -p.height / 2, p.width, p.height);
 }
 
 function draw_board(p: P5) {
+  p.translate(p.width / 2, p.height / 2);
+  set_color_set(palettes[PARAMS.palette_id].color_sets);
+
+  draw_background(p);
+
   let bc = get_base_change_function(1);
   board_cells.forEach((t) => display_cell(p, t, bc));
   pieces.forEach((t) => (t.shadow ? display_piece_shadow(p, t, bc) : {}));
